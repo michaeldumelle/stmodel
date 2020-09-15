@@ -1,9 +1,15 @@
-invert <- function() {
-
+invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+                   o_index, x_o, y_o, cov_o, diag_tol = 1e-4, st_cov) {
+  switch(st_cov,
+         "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+                                          o_index, x_o, y_o, cov_o, diag_tol),
+         "product" = invert_product(),
+         "sum_with_error" = invert_sum_with_error(),
+         stop("choose a valid spatio-temporal covariance structure"))
 }
 
 invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                              o_index, x_o, y_o, cov_o, diag_tol = 1e-4) {
+                              o_index, x_o, y_o, cov_o, diag_tol) {
   full_index <- seq(1, ncol(r_s) * ncol(r_t))
   m_index <- full_index[-o_index]
   # stegle step
