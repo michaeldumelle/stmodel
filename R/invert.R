@@ -1,5 +1,7 @@
 invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                   o_index, x_o, y_o, cov_o, diag_tol = 1e-4, st_cov) {
+                   o_index, x_o, y_o, cov_o, diag_tol = 1e-4,
+                   st_cov = c("productsum", "product", "sum_with_error")) {
+  st_cov <- match.arg(st_cov)
   switch(st_cov,
          "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
                                           o_index, x_o, y_o, cov_o, diag_tol),

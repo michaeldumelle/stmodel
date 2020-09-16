@@ -11,6 +11,7 @@
 ## h_make(1:3)
 ## h_make(1:3, 1:3)
 h_make <- function(coord1, coord2 = NULL, distmetric = "euclidean") {
+  distmetric <- match.arg(distmetric)
   switch(distmetric,
          euclidean = euc_dist(coord1, coord2),
          stop("invalid distance metric"))

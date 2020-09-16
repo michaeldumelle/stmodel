@@ -10,7 +10,8 @@
 ## @examples
 ## h <- h_make(1:3)
 ## r <- r_make(h, 3, "exponential")
-r_make <- function(h, range, structure) {
+r_make <- function(h, range, structure = c("exponential", "spherical", "gaussian", "tent")) {
+  structure <- match.arg(structure)
   switch(structure,
          exponential = r_exp(h, range),
          spherical = r_sph(h, range),
