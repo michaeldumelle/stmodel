@@ -39,14 +39,14 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
   # creating inverse square root of v matrix
   vinvroot <- 1 / sqrt(v)
   # creating inverse of w * sqrt(v)
-  w_vinvroot <- w %*% diag(vinvroot)
+  t_w_vinvroot <- as.vector(vinvroot) * t(w)
   #creating the transpose
-  t_w_vinvroot <- t(w_vinvroot)
+  w_vinvroot <- t(t_w_vinvroot)
 
 
   # storing the output we will need for the iterative smw
   c_t <- chol(sigma_make(t_de, r_t, t_ie))
-  c_s <- chol(sigma_make(s_de, r_t, s_ie))
+  c_s <- chol(sigma_make(s_de, r_s, s_ie))
 
   ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s)
             # st x st %*% (st x st * st x t) = st x t
@@ -177,7 +177,12 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 #       logdet <- logdet + 2 * sum(log(diag(chol_mm)))
 #   }
 #
+
+  if (log_determinant == TRUE){
   return(list(siginv_o = siginv_o, logdet = logdet))
+  } else {
+    return(list(siginv_o = siginv_o))
+  }
 
 }
 
@@ -219,19 +224,19 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 #
 #
 #
-#
-# x = c(1, 1, 2, 2)
-# t = c(1, 2, 1, 2)
+
+# x = rep(1:30, times = 30)
+# t = rep(1:30, each = 30)
 # r_s = exp(-h_make(unique(x)))
 # r_t = exp(-h_make(unique(t)))
 # s_de = t_de = s_ie = t_ie = st_de = st_ie = 1
-# o_index = c(1)
-# xyc_o = matrix(1, nrow = 3)
+# o_index = 1:length(x)
+# xyc_o = matrix(1, nrow = length(x))
 # diag_tol = 0
 # n_s <- ncol(r_s)
 # n_t <- ncol(r_t)
 # n_st <- n_s * n_t
-# full_index = 1:4
+# full_index = o_index[-2]
 # m_index <- full_index[-o_index]
 # dense <- length(o_index) == n_st
 #
@@ -242,7 +247,7 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 # t_ie <- t_ie + diag_tol
 # st_ie <- st_ie + diag_tol
 # log_determinant = TRUE
-# xyc_o = matrix(1, nrow = 4)
+# xyc_o = matrix(1, nrow = length(x))
 # xyc_o <- xyc_o[o_index, , drop = FALSE]
 # invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, xyc_o, diag_tol)
 #
@@ -251,11 +256,14 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 # full_rt = exp(-h_make(t))
 # z_s = model.matrix(~ as.factor(x) - 1)
 # z_t = model.matrix(~ as.factor(t) - 1)
-# pscov = s_de * full_rs + s_ie * (z_s %*% diag(2) %*% t(z_s)) +
-#   t_de * full_rt + t_ie * (z_t %*% diag(2) %*% t(z_t)) +
-#   st_de * full_rs * full_rt + st_ie * diag(4)
+# pscov = s_de * full_rs + s_ie * (z_s %*% diag(30) %*% t(z_s)) +
+#   t_de * full_rt + t_ie * (z_t %*% diag(30) %*% t(z_t)) +
+#   st_de * full_rs * full_rt + st_ie * diag(length(x))
 # pscov = pscov[o_index, o_index]
-# determinant(pscov)
+# determinant(pscov[o_index, o_index])
 # solve(pscov) %*% xyc_o
 #
 #
+# microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
+#                                                  st_ie, o_index, xyc_o, diag_tol), times = 10)
+# microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 10)
