@@ -1,12 +1,48 @@
 invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                   o_index, xyc_o, diag_tol = 1e-4,
+                   o_index, m_index, xyc_o, diag_tol = 1e-4,
                    st_cov = c("productsum", "product", "sum_with_error"),
                    log_determinant = TRUE) {
   n_s <- ncol(r_s)
   n_t <- ncol(r_t)
   n_st <- n_s * n_t
-  m_index <- full_index[-o_index]
   dense <- length(o_index) == n_st
+
+  st_cov <- match.arg(st_cov)
+
+  # mike - here are the things you need to do on 9/18
+  ## for the linear with error covariance you must
+  ## 1. make a change multiply_z to be multiply_z_r, multiply_zp_l, and multiply_z_l functions
+  ## you only need multiply_z_l to work for z_t on the left in the linear_with_sum covariance
+  ## 2. make a multiply_zp_z function
+  ## you only need this to work for temporal
+  ## 3. store sigma inverse (st + t) - you can store this because sigma inverse st is easy (diagonal)
+  ## 4. compute sigma inverse (st + t + s)
+  ## 5. use helmert wolf on 4. to compute observed inverse and log det
+
+  ## for the separable covariance you must
+  # 1. incorporate nugget proportion variances into sigma_make()
+  # 2. make the inversion algorithm for kronecker products
+  # 3. use helmert wolf on 3. to compute observed inverse and log det
+
+  # closing
+
+  ## 1. it would be nice to never have to store st x st matrices, but this would require
+  ## very detailed code taking a kronecker product multiplied on the right by a matrix and find a
+  ## way to do that right multiplication mid kronecker product
+  ## right now - that is INFEASIBLE and one st x st matrix will unfortunately have to be stored
+  ## for each algorithm (note to self unstore second st x st that is the transpose in ps algorithm)
+  ## 2. clean up all commented stuff and make a reasonable test function - matt can you do this?
+
+  switch(st_cov,
+         "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+                                          o_index, m_index, xyc_o, diag_tol),
+         "product" = invert_product(),
+         "sum_with_error" = invert_sum_with_error(),
+         stop("choose a valid spatio-temporal covariance structure"))
+}
+
+invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+                              o_index, m_index, xyc_o, diag_tol) {
 
   ## adding diagonal tolerances for invertibility stability
   diag(r_s) <- diag(r_s) + diag_tol
@@ -14,19 +50,6 @@ invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
   s_ie <- s_ie + diag_tol
   t_ie <- t_ie + diag_tol
   st_ie <- st_ie + diag_tol
-
-  st_cov <- match.arg(st_cov)
-
-  switch(st_cov,
-         "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                                          o_index, xyc_o, diag_tol),
-         "product" = invert_product(),
-         "sum_with_error" = invert_sum_with_error(),
-         stop("choose a valid spatio-temporal covariance structure"))
-}
-
-invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                              o_index, xyc_o, diag_tol) {
 
   ## finding eigendecompositions
   r_s_eigen <- eigen(r_s)
@@ -110,134 +133,31 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 
     if (!dense)
       logdet <- logdet + 2 * sum(log(diag(c_mm)))
-  }
-
-  # # smw step - storage 1 right mult by temporal design matrix
-  # inv_st_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s)
-  # chol_inv_t <- chol(simga_make(t_de, r_t, t_ie + diag_tol, diag(n_t)))
-  # chol_smw1_p2mid <- chol(chol2inv(chol_inv_t) + t(multiply_z(inv_st_zt, "temporal", n_s)))
-  # smw1_p2 <- inv_st_zs %*% chol2inv(chol_smw1_p2mid) %*% t(inv_st_zt)
-  #
-  # chol_inv_s <- chol(sigma-make(s_de, r_s, s_ie + diag_tol, diag(n_s)))
-  #
-  #
-  # ## smw step 1.5 - storage 1.5 right mult by fixed effects design matrix
-  # smw2_p1 <- w_vinvroot %*% (t_w_vinvroot %*% xyc_o) -
-  #   # st x st * (st x st * st x t) = st x t
-  #   inv_st_zt %*% chol2inv(chol_smw1_p2mid) %*% (t(inv_st_zt) %*% xyc_o)
-  #   # st x t * t x t * (t x st * st x t) = st x t * t x t * t x t = st x t
-  #
-  # inv_stpt_zs <- w_vinvroot %*% (t_w_vinvroot %*% multiply_z(t_w_vinvroot, "spatial", n_s)) -
-  #   # st x st * (st x st * st x t) = st x t
-  #   inv_st_zt %*% chol2inv(chol_smw1_p2mid) %*% (t(inv_st_zt) %*% multiply_z(t_w_vinvroot, "spatial", n_s))
-  # # st x t * t x t * (t x st * st x t) = st x t * t x t * t x t = st x t
-  #
-  # chol_smw2_p2mid <- chol(chol2inv(chol_inv_s) + t(multiply_z(iv_stpt_zs, "spatial", n_s)))
-  # smw2 <- smw2_p1 - inv_stpt_zs %*% chol2inv(chol_smw2_p2mid) %*%
-  #   (t(inv_st_zt) %*% multiply_z(t_w_vinvroot, "spatial", n_s)) %*%
-  #   xyc_o
-  #
-  # chol_inv_smw1_p2mid <- chol2inv(chol_smw1_p2mid)
-  # chol_inv_smw2_p2mid <- chol2inv(chol_smw2_p2mid)
-#
-#   invdense_oo <- w_vinvroot[o_index, o_index, drop = FALSE] %*% (t_w_vinvroot[ob, ob, drop = FALSE] %*% xyc_o) +
-#     w_vinvroot[o_index, m_index, drop = FALSE] %*% (t_w_vinvroot[mi, ob, drop = FALSE] %*% xyc_o) -
-#     inv_st_zt[o_index, , drop = FALSE] %*%
-#     (chol_inv_smw1_p2mid %*% (t(inv_st_zt[o_index, , drop = FALSE]) %*% xyc_o)) -
-#     iv_stpt_zs[o_index, , drop = FALSE] %*%
-#     (chol_inv_smw2_p2mid %*% (t(inv_stpt_zs[o_index, , drop = FALSE]) %*% xyc_o))
-#
-#   invdense_om <- w_vinvroot[o_index, o_index, drop = FALSE] %*% w_vinvroot[o_index, m_index, drop = FALSE] +
-#     w_vinvroot[o_index, m_index, drop = FALSE] %*% w_vinvroot[m_index, m_index, drop = FALSE] -
-#     inv_st_zt[o_index, , drop = FALSE] %*%
-#     (chol_inv_smw1_p2mid %*% t(inv_st_zt[m_index, , drop = FALSE])) -
-#     iv_stpt_zs[o_index, , drop = FALSE] %*%
-#     (chol_inv_smw2_p2mid %*% t(inv_stpt_zs[m_index, , drop = FALSE]))
-#
-#   invdense_mm <- w_vinvroot[m_index, o_index, drop = FALSE] %*% w_vinvroot[o_index, m_index, drop = FALSE] +
-#     w_vinvroot[m_index, m_index, drop = FALSE] %*% w_vinvroot[m_index, m_index, drop = FALSE] -
-#     inv_st_zt[m_index, , drop = FALSE] %*%
-#     (chol_inv_smw1_p2mid %*% t(inv_st_zt[m_index, , drop = FALSE])) -
-#     iv_stpt_zs[m_index, , drop = FALSE] %*%
-#     (chol_inv_smw2_p2mid %*% t(inv_stpt_zs[m_index, , drop = FALSE]))
-#
-#
-#   # return the correct object
-#   chol_mm <- chol(invdense_mm)
-#   sigmainv_o <- invdense_oo - invdense_om %*% (chol2inv(chol_mm) %*% (t(invdense_om) %*% xyc_o))
-#
-#   # log determinant
-#
-#   if (log_determinant) {
-#     logdet <- sum(log(v)) +
-#       2 * sum(log(diag(chol_sigma_t))) + 2 * sum(log(diag(chol_smw1_p2mid))) +
-#       2 * sum(log(diag(chol_sigma_s))) + 2 * sum(log(diag(chol_smw2_p2mid)))
-#
-#     if (dense_check)
-#       logdet <- logdet + 2 * sum(log(diag(chol_mm)))
-#   }
-#
-
-  if (log_determinant == TRUE){
-  return(list(siginv_o = siginv_o, logdet = logdet))
   } else {
-    return(list(siginv_o = siginv_o))
+    logdet <- NULL
   }
 
+  output <- list(siginv_o = siginv_o, logdet = logdet)
+  output_non_null <- output[!unlist(lapply(output, is.null))]
+  return(output_non_null)
 }
 
-
-# x = c(1, 1, 2, 2)
-# t = c(1, 2, 1, 2)
+# x = rep(1:50, times = 50)
+# t = rep(1:50, each = 50)
 # r_s = exp(-h_make(unique(x)))
 # r_t = exp(-h_make(unique(t)))
 # s_de = t_de = s_ie = t_ie = st_de = st_ie = 1
-# o_index = 1:4
-# xyc_o = matrix(1, nrow = 4)
-# diag_tol = 0
-# n_s <- ncol(r_s)
-# n_t <- ncol(r_t)
-# n_st <- n_s * n_t
-# m_index <- full_index[-o_index]
-# dense <- length(o_index) == n_st
-#
-# ## adding diagonal tolerances for invertibility stability
-# diag(r_s) <- diag(r_s) + diag_tol
-# diag(r_t) <- diag(r_t) + diag_tol
-# s_ie <- s_ie + diag_tol
-# t_ie <- t_ie + diag_tol
-# st_ie <- st_ie + diag_tol
-# log_determinant = TRUE
-# invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, xyc_o, diag_tol)
-#
-#
-#
-# full_rs = exp(-h_make(x))
-# full_rt = exp(-h_make(t))
-# z_s = model.matrix(~ as.factor(x) - 1)
-# z_t = model.matrix(~ as.factor(t) - 1)
-# pscov = s_de * full_rs + s_ie * (z_s %*% diag(2) %*% t(z_s)) +
-#   t_de * full_rt + t_ie * (z_t %*% diag(2) %*% t(z_t)) +
-#   st_de * full_rs * full_rt + st_ie * diag(4)
-# determinant(pscov)
-# solve(pscov) %*% xyc_o
-#
-#
-#
-
-# x = rep(1:30, times = 30)
-# t = rep(1:30, each = 30)
-# r_s = exp(-h_make(unique(x)))
-# r_t = exp(-h_make(unique(t)))
-# s_de = t_de = s_ie = t_ie = st_de = st_ie = 1
-# o_index = 1:length(x)
+# full_index = 1:length(x)
+# index_sample <- sample(full_index, 10)
+# o_index = full_index[-index_sample]
+# m_index = full_index[index_sample]
 # xyc_o = matrix(1, nrow = length(x))
 # diag_tol = 0
 # n_s <- ncol(r_s)
 # n_t <- ncol(r_t)
 # n_st <- n_s * n_t
-# full_index = o_index[-2]
-# m_index <- full_index[-o_index]
+# # full_index = o_index[-sample(full_index, 10)]
+# # m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
 # dense <- length(o_index) == n_st
 #
 # ## adding diagonal tolerances for invertibility stability
@@ -249,21 +169,112 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 # log_determinant = TRUE
 # xyc_o = matrix(1, nrow = length(x))
 # xyc_o <- xyc_o[o_index, , drop = FALSE]
-# invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, xyc_o, diag_tol)
+# xyc_o = cbind(xyc_o, rnorm(length(o_index)))
+# test = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, m_index, xyc_o, diag_tol)
 #
 #
 # full_rs = exp(-h_make(x))
 # full_rt = exp(-h_make(t))
 # z_s = model.matrix(~ as.factor(x) - 1)
 # z_t = model.matrix(~ as.factor(t) - 1)
-# pscov = s_de * full_rs + s_ie * (z_s %*% diag(30) %*% t(z_s)) +
-#   t_de * full_rt + t_ie * (z_t %*% diag(30) %*% t(z_t)) +
+# pscov = s_de * full_rs + s_ie * (z_s %*% diag(50) %*% t(z_s)) +
+#   t_de * full_rt + t_ie * (z_t %*% diag(50) %*% t(z_t)) +
 #   st_de * full_rs * full_rt + st_ie * diag(length(x))
 # pscov = pscov[o_index, o_index]
-# determinant(pscov[o_index, o_index])
-# solve(pscov) %*% xyc_o
+# determinant(pscov)
+# test2 = solve(pscov) %*% xyc_o
 #
-#
+# testf = cbind(test$siginv_o, test2)
+# all.equal(testf[, 1:2], testf[, 3:4])
+# log_determinant = FALSE
 # microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
-#                                                  st_ie, o_index, xyc_o, diag_tol), times = 10)
-# microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 10)
+#                                                  st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
+# microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
+
+
+
+
+# invert_sum_with_error <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_ie,
+#                                   o_index, m_index, xyc_o, diag_tol) {
+#
+#   ## adding diagonal tolerances for invertibility stability
+#   diag(r_s) <- diag(r_s) + diag_tol
+#   diag(r_t) <- diag(r_t) + diag_tol
+#   s_ie <- s_ie + diag_tol
+#   t_ie <- t_ie + diag_tol
+#   st_ie <- st_ie + diag_tol
+#
+#
+#   # storing the output we will need for the iterative smw
+#   c_t <- chol(sigma_make(t_de, r_t, t_ie))
+#   c_s <- chol(sigma_make(s_de, r_s, s_ie))
+#
+#
+#   c_mt <- chol(chol2inv(c_t) + diag(n_s / st_ie, nrow = n_t, ncol = n_t))
+#   # (t x t + tr(tr(st x t) * st x t) = t x t
+#   ic_mt <- chol2inv(c_mt)
+#   # t x t
+#   ic_mt_zt <-
+#
+#   istpt_zs <- w_vinvroot %*% multiply_z(mx = t_w_vinvroot, z_type = "spatial", n_s = n_s) -
+#     ist_zt %*% (ic_mt %*% multiply_z(mx = tr_ist_zt, z_type = "spatial", n_s = n_s))
+#   # st x st * (st x st * st x s) - st x t (t x t * (tr(st x t) * st x s)) =
+#   # st x s - st x t * t x s = st x s
+#   tr_istpt_zs <- t(istpt_zs)
+#   c_ms <- chol(chol2inv(c_s) + t(multiply_z(mx = tr_istpt_zs, z_type = "spatial", n_s = n_s)))
+#   # s x s + tr(tr(st x s) * st x s) = s x s
+#   ic_ms <- chol2inv(c_ms)
+#   # s x s
+#
+#   # now to implement algorithm
+#
+#   if (dense) {
+#     siginv_o <- w_vinvroot %*% (t_w_vinvroot %*% xyc_o) -
+#       # st x st * (st x st * st x p) = st x p
+#       ist_zt %*% (ic_mt %*% (tr_ist_zt %*% xyc_o)) -
+#       # st x t * (t x t * (t x st * st x p)) = st x p
+#       istpt_zs %*% (ic_ms %*% (tr_istpt_zs %*% xyc_o))
+#     # st x s * (s x s * (s x st * st x p)) = st x p
+#   } else {
+#     d_oo <- w_vinvroot[o_index, o_index, drop = FALSE] %*% (t_w_vinvroot[o_index, o_index, drop = FALSE] %*% xyc_o) +
+#       w_vinvroot[o_index, m_index, drop = FALSE] %*% (t_w_vinvroot[m_index, o_index, drop = FALSE] %*% xyc_o) -
+#       ist_zt[o_index, , drop = FALSE] %*%
+#       (ic_mt %*% (tr_ist_zt[ , o_index, drop = FALSE] %*% xyc_o)) -
+#       istpt_zs[o_index, , drop = FALSE] %*%
+#       (ic_ms %*% (tr_istpt_zs[ , o_index, drop = FALSE] %*% xyc_o))
+#
+#     d_om <- w_vinvroot[o_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
+#       w_vinvroot[o_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
+#       ist_zt[o_index, , drop = FALSE] %*%
+#       (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
+#       istpt_zs[o_index, , drop = FALSE] %*%
+#       (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
+#
+#     d_mm <- w_vinvroot[m_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
+#       w_vinvroot[m_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
+#       ist_zt[m_index, , drop = FALSE] %*%
+#       (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
+#       istpt_zs[m_index, , drop = FALSE] %*%
+#       (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
+#
+#     # return the correct object
+#     c_mm <- chol(d_mm)
+#     siginv_o <- d_oo - d_om %*% (chol2inv(c_mm) %*% (t(d_om) %*% xyc_o))
+#
+#   }
+#
+#   if (log_determinant) {
+#     logdet <- sum(log(v)) +
+#       2 * sum(log(diag(c_t))) + 2 * sum(log(diag(c_mt))) +
+#       2 * sum(log(diag(c_s))) + 2 * sum(log(diag(c_ms)))
+#
+#     if (!dense)
+#       logdet <- logdet + 2 * sum(log(diag(c_mm)))
+#   } else {
+#     logdet <- NULL
+#   }
+#
+#   output <- list(siginv_o = siginv_o, logdet = logdet)
+#   output_non_null <- output[!unlist(lapply(output, is.null))]
+#   return(output_non_null)
+# }
