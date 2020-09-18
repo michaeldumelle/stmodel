@@ -39,3 +39,9 @@ invert_chol_sum_with_error <- function(f_s, f_t, s_de, s_ie, t_de, t_ie, st_ie,
   cov_st <- diag(st_ie, nrow = nrow(f_s), ncol = ncol(f_t))
   return(cov_s + cov_t + cov_st)
 }
+
+invert_chol_separable <- function(f_s, f_t, st_de, st_ie,
+                                  xyc_o, diag_tol, log_determinant){
+  cov_st <- st_de * f_t * f_s
+  return(cov_st)
+}
