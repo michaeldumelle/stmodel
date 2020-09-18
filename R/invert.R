@@ -2,37 +2,11 @@ invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
                    o_index, m_index, xyc_o, diag_tol = 1e-4,
                    st_cov = c("productsum", "product", "sum_with_error"),
                    log_determinant = TRUE) {
-  n_s <- ncol(r_s)
-  n_t <- ncol(r_t)
-  n_st <- n_s * n_t
-  dense <- length(o_index) == n_st
+
+  # do i combine this function and the cholesky function?
+
 
   st_cov <- match.arg(st_cov)
-
-  # mike - here are the things you need to do on 9/18
-  ## for the linear with error covariance you must
-  ## 1. make a change multiply_z to be multiply_z_r, multiply_zp_l, and multiply_z_l functions
-  ## you only need multiply_z_l to work for z_t on the left in the linear_with_sum covariance
-  ## 2. make a multiply_zp_z function
-  ## you only need this to work for temporal
-  ## 3. store sigma inverse (st + t) - you can store this because sigma inverse st is easy (diagonal)
-  ## 4. compute sigma inverse (st + t + s)
-  ## 5. use helmert wolf on 4. to compute observed inverse and log det
-
-  ## for the separable covariance you must
-  # 1. incorporate nugget proportion variances into sigma_make()
-  # 2. make the inversion algorithm for kronecker products
-  # 3. use helmert wolf on 3. to compute observed inverse and log det
-
-  # closing
-
-  ## 1. it would be nice to never have to store st x st matrices, but this would require
-  ## very detailed code taking a kronecker product multiplied on the right by a matrix and find a
-  ## way to do that right multiplication mid kronecker product
-  ## right now - that is INFEASIBLE and one st x st matrix will unfortunately have to be stored
-  ## for each algorithm (note to self unstore second st x st that is the transpose in ps algorithm)
-  ## 2. clean up all commented stuff and make a reasonable test function - matt can you do this?
-
   switch(st_cov,
          "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
                                           o_index, m_index, xyc_o, diag_tol),
@@ -43,6 +17,14 @@ invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 
 invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
                               o_index, m_index, xyc_o, diag_tol) {
+
+  n_s <- ncol(r_s)
+  n_t <- ncol(r_t)
+  n_st <- n_s * n_t
+  dense <- length(o_index) == n_st
+
+
+
 
   ## adding diagonal tolerances for invertibility stability
   diag(r_s) <- diag(r_s) + diag_tol
@@ -125,7 +107,6 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
     # return the correct object
     c_mm <- chol(d_mm)
     siginv_o <- d_oo - d_om %*% (chol2inv(c_mm) %*% (t(d_om) %*% xyc_o))
-
   }
 
   if (log_determinant) {
@@ -144,54 +125,55 @@ invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
   return(output_non_null)
 }
 
-x = rep(1:40, times = 40)
-t = rep(1:40, each = 40)
-r_s = exp(-h_make(unique(x)))
-r_t = exp(-h_make(unique(t)))
-s_de = t_de = s_ie = t_ie = st_de = st_ie = 1
-full_index = 1:length(x)
-index_sample <- sample(full_index, 10)
-o_index = full_index[-index_sample]
-m_index = full_index[index_sample]
-xyc_o = matrix(1, nrow = length(x))
-diag_tol = 0
-n_s <- ncol(r_s)
-n_t <- ncol(r_t)
-n_st <- n_s * n_t
-# full_index = o_index[-sample(full_index, 10)]
-# m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
-dense <- length(o_index) == n_st
-
-## adding diagonal tolerances for invertibility stability
-diag(r_s) <- diag(r_s) + diag_tol
-diag(r_t) <- diag(r_t) + diag_tol
-s_ie <- s_ie + diag_tol
-t_ie <- t_ie + diag_tol
-st_ie <- st_ie + diag_tol
-log_determinant = TRUE
-xyc_o = matrix(1, nrow = length(x))
-xyc_o <- xyc_o[o_index, , drop = FALSE]
-xyc_o = cbind(xyc_o, rnorm(length(o_index)))
-test = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, m_index, xyc_o, diag_tol)
-
-
-full_rs = exp(-h_make(x))
-full_rt = exp(-h_make(t))
-z_s = model.matrix(~ as.factor(x) - 1)
-z_t = model.matrix(~ as.factor(t) - 1)
-pscov = s_de * full_rs + s_ie * (z_s %*% diag(40) %*% t(z_s)) +
-  t_de * full_rt + t_ie * (z_t %*% diag(40) %*% t(z_t)) +
-  st_de * full_rs * full_rt + st_ie * diag(length(x))
-pscov = pscov[o_index, o_index]
-determinant(pscov)
-test2 = solve(pscov) %*% xyc_o
-
-testf = cbind(test$siginv_o, test2)
-all.equal(testf[, 1:2], testf[, 3:4])
-log_determinant = FALSE
-microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
-                                                 st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
-microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
+# x = rep(1:40, times = 40)
+# t = rep(1:40, each = 40)
+# r_s = exp(-h_make(unique(x)))
+# r_t = exp(-h_make(unique(t)))
+# s_de = t_de = s_ie = t_ie = st_de = st_ie = 1
+# full_index = 1:length(x)
+# index_sample <- sample(full_index, 10)
+# o_index = full_index[-index_sample]
+# m_index = full_index[index_sample]
+# xyc_o = matrix(1, nrow = length(x))
+# diag_tol = 0
+# n_s <- ncol(r_s)
+# n_t <- ncol(r_t)
+# n_st <- n_s * n_t
+# # full_index = o_index[-sample(full_index, 10)]
+# # m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
+# dense <- length(o_index) == n_st
+#
+# ## adding diagonal tolerances for invertibility stability
+# diag(r_s) <- diag(r_s) + diag_tol
+# diag(r_t) <- diag(r_t) + diag_tol
+# s_ie <- s_ie + diag_tol
+# t_ie <- t_ie + diag_tol
+# st_ie <- st_ie + diag_tol
+# log_determinant = TRUE
+# o_index = full_index
+# xyc_o = matrix(1, nrow = length(x))
+# xyc_o <- xyc_o[o_index, , drop = FALSE]
+# xyc_o = cbind(xyc_o, rnorm(length(o_index)))
+# test2 = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, m_index, xyc_o, diag_tol)
+#
+#
+# full_rs = exp(-h_make(x))
+# full_rt = exp(-h_make(t))
+# z_s = model.matrix(~ as.factor(x) - 1)
+# z_t = model.matrix(~ as.factor(t) - 1)
+# pscov = s_de * full_rs + s_ie * (z_s %*% diag(40) %*% t(z_s)) +
+#   t_de * full_rt + t_ie * (z_t %*% diag(40) %*% t(z_t)) +
+#   st_de * full_rs * full_rt + st_ie * diag(length(x))
+# pscov = pscov[o_index, o_index]
+# determinant(pscov)
+# test2 = solve(pscov) %*% xyc_o
+#
+# testf = cbind(test$siginv_o, test2)
+# all.equal(testf[, 1:2], testf[, 3:4])
+# log_determinant = FALSE
+# microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
+#                                                  st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
+# microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
 
 
 
@@ -201,6 +183,11 @@ microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
 
 invert_sum_with_error <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
                               o_index, m_index, xyc_o, diag_tol) {
+
+  n_s <- ncol(r_s)
+  n_t <- ncol(r_t)
+  n_st <- n_s * n_t
+  dense <- length(o_index) == n_st
 
   ## adding diagonal tolerances for invertibility stability
   diag(r_s) <- diag(r_s) + diag_tol
@@ -252,63 +239,69 @@ invert_sum_with_error <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie
 }
 
 
-x = rep(1:50, times = 50)
-t = rep(1:50, each = 50)
-r_s = exp(-h_make(unique(x)))
-r_t = exp(-h_make(unique(t)))
-s_de = t_de = s_ie = t_ie = st_ie = 1
-st_de <- 0
-#st_ie = 0
-full_index = 1:length(x)
-index_sample <- sample(full_index, 10)
-o_index = full_index[-index_sample]
-m_index = full_index[index_sample]
-xyc_o = matrix(1, nrow = length(x))
-diag_tol = 0
-n_s <- ncol(r_s)
-n_t <- ncol(r_t)
-n_st <- n_s * n_t
-# full_index = o_index[-sample(full_index, 10)]
-# m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
-dense <- length(o_index) == n_st
+# x = rep(1:50, times = 50)
+# t = rep(1:50, each = 50)
+# r_s = exp(-h_make(unique(x)))
+# r_t = exp(-h_make(unique(t)))
+# s_de = t_de = s_ie = t_ie = st_ie = 1
+# st_de <- 0
+# #st_ie = 0
+# full_index = 1:length(x)
+# index_sample <- sample(full_index, 10)
+# o_index = full_index[-index_sample]
+# m_index = full_index[index_sample]
+# xyc_o = matrix(1, nrow = length(x))
+# diag_tol = 0
+# n_s <- ncol(r_s)
+# n_t <- ncol(r_t)
+# n_st <- n_s * n_t
+# # full_index = o_index[-sample(full_index, 10)]
+# # m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
+# dense <- length(o_index) == n_st
+#
+# ## adding diagonal tolerances for invertibility stability
+# diag(r_s) <- diag(r_s) + diag_tol
+# diag(r_t) <- diag(r_t) + diag_tol
+# s_ie <- s_ie + diag_tol
+# t_ie <- t_ie + diag_tol
+# st_ie <- st_ie + diag_tol
+# log_determinant = TRUE
+# xyc_o = matrix(1, nrow = length(x))
+# xyc_o <- xyc_o[o_index, , drop = FALSE]
+# xyc_o = cbind(xyc_o, rnorm(length(o_index)))
+# test = invert_sum_with_error(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, m_index, xyc_o, diag_tol)
 
-## adding diagonal tolerances for invertibility stability
-diag(r_s) <- diag(r_s) + diag_tol
-diag(r_t) <- diag(r_t) + diag_tol
-s_ie <- s_ie + diag_tol
-t_ie <- t_ie + diag_tol
-st_ie <- st_ie + diag_tol
-log_determinant = TRUE
-xyc_o = matrix(1, nrow = length(x))
-xyc_o <- xyc_o[o_index, , drop = FALSE]
-xyc_o = cbind(xyc_o, rnorm(length(o_index)))
-test = invert_sum_with_error(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie, o_index, m_index, xyc_o, diag_tol)
 
-
-full_rs = exp(-h_make(x))
-full_rt = exp(-h_make(t))
-z_s = model.matrix(~ as.factor(x) - 1)
-z_t = model.matrix(~ as.factor(t) - 1)
-pscov = s_de * full_rs + s_ie * (z_s %*% diag(50) %*% t(z_s)) +
-  t_de * full_rt + t_ie * (z_t %*% diag(50) %*% t(z_t)) +
-  st_de * full_rs * full_rt + st_ie * diag(length(x))
-pscov = pscov[o_index, o_index]
-determinant(pscov)
-#chol(pscov)
-test2 = solve(pscov) %*% xyc_o
-
-testf = cbind(test$siginv_o, test2)
-all.equal(testf[, 1:2], testf[, 3:4])
-log_determinant = FALSE
-microbenchmark::microbenchmark(invert_sum_with_error(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
-                                                 st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
-microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
-                                                     st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
-microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
+# full_rs = exp(-h_make(x))
+# full_rt = exp(-h_make(t))
+# z_s = model.matrix(~ as.factor(x) - 1)
+# z_t = model.matrix(~ as.factor(t) - 1)
+# pscov = s_de * full_rs + s_ie * (z_s %*% diag(50) %*% t(z_s)) +
+#   t_de * full_rt + t_ie * (z_t %*% diag(50) %*% t(z_t)) +
+#   st_de * full_rs * full_rt + st_ie * diag(length(x))
+# pscov = pscov[o_index, o_index]
+# determinant(pscov)
+# #chol(pscov)
+# test2 = solve(pscov) %*% xyc_o
+#
+# testf = cbind(test$siginv_o, test2)
+# all.equal(testf[, 1:2], testf[, 3:4])
+# log_determinant = FALSE
+# microbenchmark::microbenchmark(invert_sum_with_error(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
+#                                                  st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
+# microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
+#                                                      st_ie, o_index, m_index,  xyc_o, diag_tol), times = 15)
+# microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
 
 
 invert_product <- function(r_s, r_t, vs_ie, vt_ie, st_de,
                               o_index, m_index, xyc_o, diag_tol) {
+
+  n_s <- ncol(r_s)
+  n_t <- ncol(r_t)
+  n_st <- n_s * n_t
+  dense <- length(o_index) == n_st
+
   diag(r_s) <- diag(r_s) + diag_tol
   diag(r_t) <- diag(r_t) + diag_tol
   st_de <- st_de + diag_tol
