@@ -28,9 +28,6 @@ euc_dist <- function(coord1, coord2 = NULL) {
     abs(outer(x, x, "-"))
   }
 
-  sqr_dif <- function(a, b) {
-    (a - b)^2
-  }
 
   eucdist_2d <- function(x, y) {
     sqrt(outer(x, x, sqr_dif) + outer(y, y, sqr_dif))
@@ -41,4 +38,8 @@ euc_dist <- function(coord1, coord2 = NULL) {
   } else {
     return(eucdist_2d(coord1, coord2))
   }
+}
+
+sqr_dif <- function(a, b) {
+  (a - b)^2
 }
