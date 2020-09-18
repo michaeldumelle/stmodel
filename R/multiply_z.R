@@ -8,6 +8,8 @@ multiply_z <- function(mx, z_type, n_s, n_t, side = c("right", "left", "p_right"
          left = multiply_z_l(mx, z_type, n_s, n_t),
          p_right = multiply_zp_r(mx, z_type, n_s, n_t),
          p_left = multiply_zp_l(mx, z_type, n_s, n_t),
+         pz_z = multiply_zp_z(z_type, n_s, n_t),
+         z_pz = multiply_z_zp(z_type, n_s, n_t),
          stop("Please choose an approporiate multiplication function for Z"))
 }
 
