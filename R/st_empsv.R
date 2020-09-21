@@ -44,7 +44,7 @@ compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
                              (h_temporal > t_lag_lower) &
                              (h_temporal <= t_lag_upper)]
   n_sqdifs <- length(sqdifs)
-  mean_sqdifs <- mean(sqdifs)
+  mean_sqdifs <- mean(sqdifs)/2
   return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, t_h = t_h))
 }
 
