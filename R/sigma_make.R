@@ -1,4 +1,4 @@
-sigma_make <- function(de, r_mx, ie, v_ie, e, scale = FALSE) {
+sigma_make <- function(de, r_mx, ie, v_ie, e = 1, scale = FALSE) {
   if (!scale) {
     sigma <- de * r_mx
     diag(sigma) <- diag(sigma) + ie
