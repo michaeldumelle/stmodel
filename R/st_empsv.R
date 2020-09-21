@@ -2,8 +2,11 @@ st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag, n_t_lag, sp_max = NULL, t_max = NULL,
                      sp_dist = "euclidean", t_dist = "euclidean"){
   h_spatial <- h_make(coord1 = xcoord, coord2 = , distmetric = sp_dist)
+  h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
   h_temporal <- h_make(coord1 = tcoord, distmetric = t_dist)
+  h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
   sqdif_response <- outer(response, response, sqr_dif)
+  sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
 
   if (is.null(sp_max)) {
     sp_max <- max(h_spatial) / 2
@@ -33,8 +36,7 @@ st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
   output$t_upper <- t_lags_upper
   output$sp_lower <- pmax(0, sp_lags_lower)
   output$sp_upper <- sp_lags_upper
-  return(output)
-  #return(output[output[["n"]] > 0, ])
+  return(output[output[["n"]] > 0, ])
 }
 
 compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
@@ -43,16 +45,16 @@ compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
                              (h_spatial <= sp_lag_upper) &
                              (h_temporal > t_lag_lower) &
                              (h_temporal <= t_lag_upper)]
-  n_sqdifs <- length(sqdifs)
+  n_sqdifs <- 2 * length(sqdifs)
   mean_sqdifs <- mean(sqdifs)/2
   return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, t_h = t_h))
 }
 
 
 
-x = rep(1:4, times = 4)
-t = rep(1:4, each = 4)
-response = rnorm(16)
+x = rep(1:35, times = 30)
+t = rep(1:30, each = 35)
+response = rnorm(35 * 30)
 h_spatial <- h_make(x)
 h_temporal <- h_make(t)
 sqdif_response <- outer(response, response, sqr_dif)
