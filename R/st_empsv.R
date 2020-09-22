@@ -1,11 +1,11 @@
 st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag, n_t_lag, sp_max = NULL, t_max = NULL,
                      sp_dist = "euclidean", t_dist = "euclidean"){
-  h_spatial <- h_make(coord1 = xcoord, coord2 = , distmetric = sp_dist)
+  h_spatial <- h_make(coord1 = xcoord, coord2 = ycoord, distmetric = sp_dist)
   h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
   h_temporal <- h_make(coord1 = tcoord, distmetric = t_dist)
   h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
-  sqdif_response <- outer(response, response, sqr_dif)
+  sqdif_response <- h_make(response)^2
   sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
 
   if (is.null(sp_max)) {
@@ -32,23 +32,25 @@ st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                           t_lag_lower = t_lags_lower, t_lag_upper = t_lags_upper,
                           sp_h = sp_h_mid, t_h = t_h_mid),
                      .f = compute_sv, h_spatial, h_temporal, sqdif_response)
-  output$t_lower <- pmax(0, t_lags_lower)
-  output$t_upper <- t_lags_upper
-  output$sp_lower <- pmax(0, sp_lags_lower)
-  output$sp_upper <- sp_lags_upper
-  return(output[output[["n"]] > 0, ])
+  # output$t_lower <- pmax(0, t_lags_lower)
+  # output$t_upper <- t_lags_upper
+  # output$sp_lower <- pmax(0, sp_lags_lower)
+  # output$sp_upper <- sp_lags_upper
+   return(output[output[["n"]] > 0, ])
+  # return(output)
 }
 
 compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
                        sp_h, t_h, h_spatial, h_temporal, sqdif_response){
-  sqdifs <- sqdif_response[(h_spatial > sp_lag_lower) &
-                             (h_spatial <= sp_lag_upper) &
-                             (h_temporal > t_lag_lower) &
-                             (h_temporal <= t_lag_upper)]
+  hsp <- (h_spatial > sp_lag_lower) & (h_spatial <= sp_lag_upper)
+  avg_hsp <- mean(h_spatial[hsp])
+  tsp <- (h_temporal > t_lag_lower) & (h_temporal <= t_lag_upper)
+  avg_tsp <- mean(h_temporal[tsp])
+  sqdifs <- sqdif_response[hsp & tsp]
   # could multiply by 2 here to match the pairs but doesnt matter for optimization
   n_sqdifs <- length(sqdifs)
   mean_sqdifs <- mean(sqdifs)/2
-  return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, t_h = t_h))
+  return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, avg_hsp = avg_hsp, t_h = t_h, avg_tsp = avg_tsp))
 }
 
 
@@ -93,15 +95,13 @@ compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
 #     st_semivariogram <- variogramST(resp ~ 1, stdf, progress = F, cutoff = s_cutoff,
 #                                     tlags = seq(from = 0, to = t_cutoff, by = 1), na.omit = T) %>% dplyr::rename(n = np)
 #
-#     test3 = st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = 15, t_max = floor(29/2))
+#     test3 = st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = floor(29/2) + 1, t_max = floor(29/2))
 #
 #     View(st_semivariogram)
 #     View(test3)
+# microbenchmark::microbenchmark(variogramST(resp ~ 1, stdf, progress = F, cutoff = s_cutoff,
+#                                            tlags = seq(from = 0, to = t_cutoff, by = 1)), times = 20)
 #
 #
-#     microbenchmark::microbenchmark(variogramST(resp ~ 1, stdf, progress = F, cutoff = s_cutoff,
-#                                                tlags = seq(from = 0, to = t_cutoff, by = 1)), times = 20)
-#
-#
-#     microbenchmark::microbenchmark(st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = 15, t_max = 14), times = 20)
-# #
+# microbenchmark::microbenchmark(st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = 15, t_max = 14), times = 20)
+

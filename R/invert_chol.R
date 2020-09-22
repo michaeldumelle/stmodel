@@ -23,7 +23,7 @@
 # }
 
 invert_chol_productsum <- function(f_s, f_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                       xyc_o, diag_tol, log_determinant) {
+                       xyc_o, diag_tol, logdet) {
   cov_s <- s_de * f_s + s_ie * (f_s == 1)
   cov_t <- t_de * f_t + t_ie * (f_t == 1)
   cov_st <- st_de * f_t * f_s
