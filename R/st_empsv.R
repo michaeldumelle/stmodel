@@ -45,16 +45,63 @@ compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
                              (h_spatial <= sp_lag_upper) &
                              (h_temporal > t_lag_lower) &
                              (h_temporal <= t_lag_upper)]
-  n_sqdifs <- 2 * length(sqdifs)
+  # could multiply by 2 here to match the pairs but doesnt matter for optimization
+  n_sqdifs <- length(sqdifs)
   mean_sqdifs <- mean(sqdifs)/2
   return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, t_h = t_h))
 }
 
 
-
-x = rep(1:35, times = 30)
-t = rep(1:30, each = 35)
-response = rnorm(35 * 30)
-h_spatial <- h_make(x)
-h_temporal <- h_make(t)
-sqdif_response <- outer(response, response, sqr_dif)
+# library(gstat)
+# library(spacetime)
+# set.seed(1)
+# x = rep(runif(35, max = 5), times = 30)
+# y = rep(1, 35 * 30)
+# s_index = rep(1:35, times = 30)
+# t = rep(1:30, each = 35)
+# response = rnorm(35 * 30)
+# h_spatial <- h_make(x)
+# h_temporal <- h_make(t)
+# sqdif_response <- outer(response, response, sqr_dif)
+# s_cutoff = max(h_make(x))/2
+# t_cutoff = max(h_make(t))/2
+#
+#
+# #creating a data frame of the observed coordinates / indices / response and arranging
+#   #by space within time
+#   semivario_data <- data.frame(x = x, y = y, s_index = s_index,
+#                                t = t, response = response) %>% dplyr::arrange(t, s_index)
+#
+#   #creating ordered spatial coordinates
+#   s_coords <- unique(semivario_data[, c("x", "y", "s_index")] %>% plyr::arrange(s_index) %>% dplyr::select(x, y))
+#   #creating ordered temporal coordinates
+#   t_coords <- unique(data.frame(t = semivario_data[, c("t")])  %>% dplyr::arrange(t))
+#
+#     #creating a spatial points data frame with coordinate information
+#     sp_df <- SpatialPoints(coords = s_coords)
+#     #creating a time series object with dummy dates spaced by one
+#     t_df <- xts::xts(seq(1, nrow(t_coords), 1), order.by = as.Date('0001-01-01') + seq(1, nrow(t_coords), 1))
+#     #creating a data frame of the response vector to be used later
+#     resp <- data.frame(resp = semivario_data$response)
+#     #creating a spatio-temporal index, storing as a matrix
+#     index = as.matrix(semivario_data[c("s_index", "t")])
+#     #creating a space time data frame that is not dense
+#     stdf <- STSDF(sp_df, t_df, data = resp, index = index)
+#     #creating a space time semivariogram from the space time data frame - omitting bins with zero observations
+#     #renaming the default output to be more standard
+#     #bug with new gstat, sp, or spactime - works on gstat_2.0-2, sp_1.3-1, spacetime_1.2-2
+#     st_semivariogram <- variogramST(resp ~ 1, stdf, progress = F, cutoff = s_cutoff,
+#                                     tlags = seq(from = 0, to = t_cutoff, by = 1), na.omit = T) %>% dplyr::rename(n = np)
+#
+#     test3 = st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = 15, t_max = floor(29/2))
+#
+#     View(st_semivariogram)
+#     View(test3)
+#
+#
+#     microbenchmark::microbenchmark(variogramST(resp ~ 1, stdf, progress = F, cutoff = s_cutoff,
+#                                                tlags = seq(from = 0, to = t_cutoff, by = 1)), times = 20)
+#
+#
+#     microbenchmark::microbenchmark(st_empsv(response, xcoord = x, tcoord = t, n_sp_lag = 16, n_t_lag = 15, t_max = 14), times = 20)
+# #
