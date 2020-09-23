@@ -225,15 +225,16 @@ invert_product <- function(r_s, r_t, vs_ie, vt_ie, st_de,
 }
 
 #
-# x = rep(1:50, times = 50)
-# t = rep(1:50, each = 50)
+# x = rep(1:4, times = 4)
+# t = rep(1:4, each = 4)
 # r_s = exp(-h_make(unique(x)))
 # r_t = exp(-h_make(unique(t)))
-# s_de = t_de = s_ie = t_ie = st_ie = 0
-# st_de <- 6
-# vs_ie = vt_ie = 0.5
+# # s_de = t_de = s_ie = t_ie = st_ie = 0
+# # st_de <- 6
+# # vs_ie = vt_ie = 0.5
+# s_de = t_de = s_ie = t_ie = st_ie = st_de = 1/6
 # full_index = 1:length(x)
-# index_sample <- sample(full_index, 10)
+# index_sample <- sample(full_index, 2)
 # o_index = full_index[-index_sample]
 # m_index = full_index[index_sample]
 # xyc_o = matrix(1, nrow = length(x))

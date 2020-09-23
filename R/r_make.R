@@ -37,3 +37,4 @@ r_tent <- function(h, range) {
   message("The tent covariance is only valid in 1-D")
   return((1 - h/range) * (h <= range))
 }
+
