@@ -1,123 +1,162 @@
-# invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-#                    o_index, m_index, xyc_o, diag_tol = 1e-4,
-#                    st_cov = c("productsum", "product", "sum_with_error"),
-#                    log_determinant = TRUE) {
-#
-#   # do i combine this function and the cholesky function?
-#
-#
-#   st_cov <- match.arg(st_cov)
-#   switch(st_cov,
-#          "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-#                                           o_index, m_index, xyc_o, diag_tol),
-#          "product" = invert_product(),
-#          "sum_with_error" = invert_sum_with_error(),
-#          stop("choose a valid spatio-temporal covariance structure"))
-# }
-
-invert_productsum <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
-                              o_index, m_index, xyc_o, diag_tol, logdet) {
-
-  n_s <- ncol(r_s)
-  n_t <- ncol(r_t)
-  n_st <- n_s * n_t
-  dense <- length(o_index) == n_st
+invert <- function(invert_object, ...) {
+  UseMethod("invert", object = invert_object)
+}
 
 
 
 
-  ## adding diagonal tolerances for invertibility stability
-  diag(r_s) <- diag(r_s) + diag_tol
-  diag(r_t) <- diag(r_t) + diag_tol
-  s_ie <- s_ie + diag_tol
-  t_ie <- t_ie + diag_tol
-  st_ie <- st_ie + diag_tol
 
-  ## finding eigendecompositions
-  r_s_eigen <- eigen(r_s)
-  r_t_eigen <- eigen(r_t)
-
-  ## creating w matrix
-  w <- kronecker(r_t_eigen$vectors, r_s_eigen$vectors)
-  # creating v matrix
-  v <- st_de * kronecker(r_t_eigen$values, r_s_eigen$values) + st_ie
-  # creating inverse square root of v matrix
-  vinvroot <- 1 / sqrt(v)
-  # creating inverse of w * sqrt(v)
-  t_w_vinvroot <- as.vector(vinvroot) * t(w)
-  #creating the transpose
-  w_vinvroot <- t(t_w_vinvroot)
+invert.productsum <- function(invert_object, ...) {
 
 
-  # storing the output we will need for the iterative smw
-  c_t <- chol(sigma_make(t_de, r_t, t_ie))
-  c_s <- chol(sigma_make(s_de, r_s, s_ie))
 
-  ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s, n_t, "right")
-            # st x st %*% (st x st * st x t) = st x t
-  tr_ist_zt <- t(ist_zt)
-  c_mt <- chol(chol2inv(c_t) + multiply_z(ist_zt, "temporal", n_s, n_t, "p_left"))
-                 #t(multiply_z(mx = t(ist_zt), z_type = "temporal", n_s = n_s)))
-            # (t x t + tr(tr(st x t) * st x t) = t x t
-  ic_mt <- chol2inv(c_mt)
-            # t x t
+  if (invert_object$chol) {
 
-  istpt_zs <- w_vinvroot %*% multiply_z(mx = t_w_vinvroot, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right") -
-    ist_zt %*% (ic_mt %*% multiply_z(mx = tr_ist_zt, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right"))
-    # st x st * (st x st * st x s) - st x t (t x t * (tr(st x t) * st x s)) =
-    # st x s - st x t * t x s = st x s
-  tr_istpt_zs <- t(istpt_zs)
-  c_ms <- chol(chol2inv(c_s) + multiply_z(mx = istpt_zs, z_type = "spatial", n_s = n_s, n_t = n_t, side = "p_left"))
-                 #t(multiply_z(mx = tr_istpt_zs, z_type = "spatial", n_s = n_s)))
-    # s x s + tr(tr(st x s) * st x s) = s x s
-  ic_ms <- chol2inv(c_ms)
-    # s x s
+    # layout the arguments
+    rf_s <- invert_object$rf_s
+    rf_t <- invert_object$rf_t
+    s_de <- invert_object$covparams[["s_de"]]
+    s_ie <- invert_object$covparams[["s_ie"]]
+    t_de <- invert_object$covparams[["t_de"]]
+    t_ie <- invert_object$covparams[["t_ie"]]
+    st_de <- invert_object$covparams[["st_de"]]
+    st_ie <- invert_object$covparams[["st_ie"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
 
-  # now to implement algorithm
-
-  if (dense) {
-    siginv_o <- w_vinvroot %*% (t_w_vinvroot %*% xyc_o) -
-    # st x st * (st x st * st x p) = st x p
-      ist_zt %*% (ic_mt %*% (tr_ist_zt %*% xyc_o)) -
-      # st x t * (t x t * (t x st * st x p)) = st x p
-      istpt_zs %*% (ic_ms %*% (tr_istpt_zs %*% xyc_o))
-      # st x s * (s x s * (s x st * st x p)) = st x p
+    cov_s <- s_de * rf_s + s_ie * (rf_s == 1)
+    cov_t <- t_de * rf_t + t_ie * (rf_t == 1)
+    cov_st <- st_de * rf_t * rf_s + st_ie * (rf_s == 1) * (rf_t == 1)
+    sigma <- cov_s + cov_t + cov_st
+    diag(sigma) <- diag(sigma) + diag_tol
+    chol_sigma <- chol(sigma)
+    siginv <- chol2inv(chol_sigma)
+    siginv_o <- siginv %*% xyc_o
+    if (logdet){
+      logdet <- 2 * sum(log(diag(chol_sigma)))
+    } else {
+      logdet <- NULL
+    }
   } else {
-    d_oo <- w_vinvroot[o_index, o_index, drop = FALSE] %*% (t_w_vinvroot[o_index, o_index, drop = FALSE] %*% xyc_o) +
-      w_vinvroot[o_index, m_index, drop = FALSE] %*% (t_w_vinvroot[m_index, o_index, drop = FALSE] %*% xyc_o) -
-      ist_zt[o_index, , drop = FALSE] %*%
-      (ic_mt %*% (tr_ist_zt[ , o_index, drop = FALSE] %*% xyc_o)) -
-      istpt_zs[o_index, , drop = FALSE] %*%
-      (ic_ms %*% (tr_istpt_zs[ , o_index, drop = FALSE] %*% xyc_o))
 
-    d_om <- w_vinvroot[o_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
-      w_vinvroot[o_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
-      ist_zt[o_index, , drop = FALSE] %*%
-      (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
-      istpt_zs[o_index, , drop = FALSE] %*%
-      (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
 
-    d_mm <- w_vinvroot[m_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
-      w_vinvroot[m_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
-      ist_zt[m_index, , drop = FALSE] %*%
-      (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
-      istpt_zs[m_index, , drop = FALSE] %*%
-      (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
+    # layout the arguments
+    r_s <- invert_object$r_s
+    r_t <- invert_object$r_t
+    s_de <- invert_object$covparams[["s_de"]]
+    s_ie <- invert_object$covparams[["s_ie"]]
+    t_de <- invert_object$covparams[["t_de"]]
+    t_ie <- invert_object$covparams[["t_ie"]]
+    st_de <- invert_object$covparams[["st_de"]]
+    st_ie <- invert_object$covparams[["st_ie"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
+    o_index <- invert_object$o_index
+    m_index <- invert_object$m_index
 
-    # return the correct object
-    c_mm <- chol(d_mm)
-    siginv_o <- d_oo - d_om %*% (chol2inv(c_mm) %*% (t(d_om) %*% xyc_o))
-  }
+    n_s <- ncol(r_s)
+    n_t <- ncol(r_t)
+    n_st <- n_s * n_t
+    dense <- length(o_index) == n_st
 
-  if (logdet) {
-    logdet <- sum(log(v)) +
-      2 * sum(log(diag(c_t))) + 2 * sum(log(diag(c_mt))) +
-      2 * sum(log(diag(c_s))) + 2 * sum(log(diag(c_ms)))
 
-    if (!dense)
-      logdet <- logdet + 2 * sum(log(diag(c_mm)))
-  } else {
-    logdet <- NULL
+
+
+    ## adding diagonal tolerances for invertibility stability
+    diag(r_s) <- diag(r_s) + diag_tol
+    diag(r_t) <- diag(r_t) + diag_tol
+    s_ie <- s_ie + diag_tol
+    t_ie <- t_ie + diag_tol
+    st_ie <- st_ie + diag_tol
+
+    ## finding eigendecompositions
+    r_s_eigen <- eigen(r_s)
+    r_t_eigen <- eigen(r_t)
+
+    ## creating w matrix
+    w <- kronecker(r_t_eigen$vectors, r_s_eigen$vectors)
+    # creating v matrix
+    v <- st_de * kronecker(r_t_eigen$values, r_s_eigen$values) + st_ie
+    # creating inverse square root of v matrix
+    vinvroot <- 1 / sqrt(v)
+    # creating inverse of w * sqrt(v)
+    t_w_vinvroot <- as.vector(vinvroot) * t(w)
+    #creating the transpose
+    w_vinvroot <- t(t_w_vinvroot)
+
+
+    # storing the output we will need for the iterative smw
+    c_t <- chol(sigma_make(t_de, r_t, t_ie))
+    c_s <- chol(sigma_make(s_de, r_s, s_ie))
+
+    ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s, n_t, "right")
+              # st x st %*% (st x st * st x t) = st x t
+    tr_ist_zt <- t(ist_zt)
+    c_mt <- chol(chol2inv(c_t) + multiply_z(ist_zt, "temporal", n_s, n_t, "p_left"))
+                   #t(multiply_z(mx = t(ist_zt), z_type = "temporal", n_s = n_s)))
+              # (t x t + tr(tr(st x t) * st x t) = t x t
+    ic_mt <- chol2inv(c_mt)
+              # t x t
+
+    istpt_zs <- w_vinvroot %*% multiply_z(mx = t_w_vinvroot, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right") -
+      ist_zt %*% (ic_mt %*% multiply_z(mx = tr_ist_zt, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right"))
+      # st x st * (st x st * st x s) - st x t (t x t * (tr(st x t) * st x s)) =
+      # st x s - st x t * t x s = st x s
+    tr_istpt_zs <- t(istpt_zs)
+    c_ms <- chol(chol2inv(c_s) + multiply_z(mx = istpt_zs, z_type = "spatial", n_s = n_s, n_t = n_t, side = "p_left"))
+                   #t(multiply_z(mx = tr_istpt_zs, z_type = "spatial", n_s = n_s)))
+      # s x s + tr(tr(st x s) * st x s) = s x s
+    ic_ms <- chol2inv(c_ms)
+      # s x s
+
+    # now to implement algorithm
+
+    if (dense) {
+      siginv_o <- w_vinvroot %*% (t_w_vinvroot %*% xyc_o) -
+      # st x st * (st x st * st x p) = st x p
+        ist_zt %*% (ic_mt %*% (tr_ist_zt %*% xyc_o)) -
+        # st x t * (t x t * (t x st * st x p)) = st x p
+        istpt_zs %*% (ic_ms %*% (tr_istpt_zs %*% xyc_o))
+        # st x s * (s x s * (s x st * st x p)) = st x p
+    } else {
+      d_oo <- w_vinvroot[o_index, o_index, drop = FALSE] %*% (t_w_vinvroot[o_index, o_index, drop = FALSE] %*% xyc_o) +
+        w_vinvroot[o_index, m_index, drop = FALSE] %*% (t_w_vinvroot[m_index, o_index, drop = FALSE] %*% xyc_o) -
+        ist_zt[o_index, , drop = FALSE] %*%
+        (ic_mt %*% (tr_ist_zt[ , o_index, drop = FALSE] %*% xyc_o)) -
+        istpt_zs[o_index, , drop = FALSE] %*%
+        (ic_ms %*% (tr_istpt_zs[ , o_index, drop = FALSE] %*% xyc_o))
+
+      d_om <- w_vinvroot[o_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
+        w_vinvroot[o_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
+        ist_zt[o_index, , drop = FALSE] %*%
+        (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
+        istpt_zs[o_index, , drop = FALSE] %*%
+        (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
+
+      d_mm <- w_vinvroot[m_index, o_index, drop = FALSE] %*% t_w_vinvroot[o_index, m_index, drop = FALSE]  +
+        w_vinvroot[m_index, m_index, drop = FALSE] %*% t_w_vinvroot[m_index, m_index, drop = FALSE] -
+        ist_zt[m_index, , drop = FALSE] %*%
+        (ic_mt %*% tr_ist_zt[ , m_index, drop = FALSE]) -
+        istpt_zs[m_index, , drop = FALSE] %*%
+        (ic_ms %*% tr_istpt_zs[ , m_index, drop = FALSE])
+
+      # return the correct object
+      c_mm <- chol(d_mm)
+      siginv_o <- d_oo - d_om %*% (chol2inv(c_mm) %*% (t(d_om) %*% xyc_o))
+    }
+
+    if (logdet) {
+      logdet <- sum(log(v)) +
+        2 * sum(log(diag(c_t))) + 2 * sum(log(diag(c_mt))) +
+        2 * sum(log(diag(c_s))) + 2 * sum(log(diag(c_ms)))
+
+      if (!dense)
+        logdet <- logdet + 2 * sum(log(diag(c_mm)))
+    } else {
+      logdet <- NULL
+    }
   }
 
   output <- list(siginv_o = siginv_o, logdet = logdet)
@@ -284,3 +323,35 @@ invert_product <- function(r_s, r_t, vs_ie, vt_ie, st_de,
 # microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
 # test3 = invert_product(r_s, r_t, vs_ie, vt_ie, st_de,
 #                o_index, m_index, xyc_o, diag_tol)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+# invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+#                    o_index, m_index, xyc_o, diag_tol = 1e-4,
+#                    st_cov = c("productsum", "product", "sum_with_error"),
+#                    log_determinant = TRUE) {
+#
+#   # do i combine this function and the cholesky function?
+#
+#
+#   st_cov <- match.arg(st_cov)
+#   switch(st_cov,
+#          "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+#                                           o_index, m_index, xyc_o, diag_tol),
+#          "product" = invert_product(),
+#          "sum_with_error" = invert_sum_with_error(),
+#          stop("choose a valid spatio-temporal covariance structure"))
+# }

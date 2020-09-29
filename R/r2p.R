@@ -1,13 +1,33 @@
-# r2p <- function(s_de, s_ie, t_de, t_ie, st_de, st_ie, v_s, v_t, estmethod, stcov){
-#   if (!(estmethod %in% c("reml", "ml", "sv"))){
-#     stop("choose a valid estimation method")
-#   }
-#   stcov <- match.arg(stcov)
-#   switch(stcov,
-#          "productsum" = r2p_productsum(s_de = s_de, s_ie = s_ie, t_de = t_de,
-#                                        t_ie = t_ie, st_de = st_de, st_ie = st_ie,
-#                                        estmethod))
-# }
+r2p_sv <- function(estobject) {
+  UseMethod("r2p_sv", object = estobject)
+}
+
+r2p_sv.productsum <- function(est_object){
+  params <- est_object$initial
+  s_vc <- c(params[["s_de"]], params[["s_ie"]])
+  svar <- sum(s_vc)
+  t_vc <- c(params[["t_de"]], params[["t_ie"]])
+  tvar <- sum(t_vc)
+  st_vc <- c(params[["st_de"]], params[["st_ie"]])
+  stvar <- sum(st_vc)
+  vc <- c(s_vc, t_vc, st_vc)
+  lambda <- (svar + tvar) / (svar + tvar + stvar)
+  alpha <- svar / (svar + tvar)
+  n_s <- params[["s_ie"]] / svar
+  n_t <- params[["t_ie"]] / tvar
+  n_st <- params[["st_ie"]] / stvar
+  pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t, n_st = n_st)
+  pparm <- c(pparm, var_prop = (svar + tvar + stvar) / max_v,
+             srange_prop = params[["s_range"]] / max_srange,
+             trange_prop = params[["t_range"]] / max_trange)
+}
+
+
+
+
+
+
+
 
 r2p_productsum <- function(s_de, s_ie, t_de, t_ie, st_de, st_ie, estmethod){
   s_vc <- c(s_de, s_ie)

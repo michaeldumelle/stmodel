@@ -1,3 +1,31 @@
+p2r_sv <- function(params, ...){
+  UseMethod("p2r_sv", object = params)
+}
+
+p2r_sv.productsum <- function(par, est_object){
+  lambda <- par[["lambda"]]
+  alpha <- par[["alpha"]]
+  n_s <- par[["n_s"]]
+  n_t <- par[["n_t"]]
+  n_st <- par[["n_st"]]
+
+  s_de <- lambda * alpha * (1 - n_s)
+  s_ie <- lambda * alpha * n_s
+  t_de <- lambda * (1 - alpha) * (1 - n_t)
+  t_ie <- lambda * (1 - alpha) * n_t
+  st_de <- (1 - lambda) * (1 - n_st)
+  st_ie <- (1 - lambda) * n_st
+
+  ov_var <- est_object$max_v * par[["var_prop"]]
+  rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
+                      t_ie = t_ie, st_de = st_de, st_ie = st_ie),
+             s_range = est_object$max_srange * par[["srange_prop"]],
+             t_range = est_object$max_trange * par[["trange_prop"]])
+  return(rparm)
+}
+
+
+
 p2r_productsum <- function(lambda, alpha, n_s, n_t, n_st, ov_var){
   s_de <- lambda * alpha * (1 - n_s)
   s_ie <- lambda * alpha * n_s

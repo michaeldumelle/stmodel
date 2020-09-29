@@ -6,7 +6,7 @@ stlm <- function(t) {
   UseMethod("stlm", object = t)
 }
 
-stlm.loglik <- function() {
+stlm.loglik <- function(t) {
   x <- TRUE
   return(x)
 }
@@ -17,6 +17,5 @@ stlm.gam <- function()
 stlm.svls <- function()
 
 
-#i think i should just use switch
-
+# i think i should just use switch
 # stlm_sv, stlm_loglik, stlm_gam
