@@ -1,4 +1,4 @@
-order_spint <- function(data, xcoord, ycoord = NULL, tcoord, ...){
+order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
   # make the ordered data frame - do this using single brackets
 
   # making the temporal ordering
@@ -24,7 +24,25 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, ...){
   data <- merge(full_grid, data, all = TRUE)
   data <- data[order(data$index), , drop = FALSE]
   data$observed <- !(is.na(data[[tcoord]]) & is.na(data[[xcoord]]))
-  return(list(data = data, h_s = h_s, h_t = h_t, us = us, ut = ut))
+
+
+  # find missing and observed indices
+  o_index <- data$index[data$observed]
+  m_index <- data$index[!data$observed]
+
+  # create a subsetted data frame of the observed values
+  data_o <- data[o_index, , drop = FALSE]
+
+  # setting the cholesky distances matrices or NULL
+  if (chol) {
+    f_s <- h_make(data_o[[xcoord]], data_o[[ycoord]], ...)
+    f_t <- h_make(data_o[[tcoord]], ...)
+  } else {
+    f_s <- NULL
+    f_t <- NULL
+  }
+  return(list(data = data, data_o = data_o, h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
+              f_s = f_s, f_t = f_t, us = us, ut = ut))
 }
 
 

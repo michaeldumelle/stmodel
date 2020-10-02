@@ -3,79 +3,77 @@ stlm <- function(){
 }
 
 stlm_svwls <- function(formula, xcoord, ycoord = NULL, tcoord, data, stcov,
-                       sp_cor, t_cor, weights, initial, chol, diagtol = 1e-4, max_v, max_srange, max_trange, ...){
+                       sp_cor, t_cor, weights, initial, chol,
+                       diag_tol = 1e-4, max_v = NULL, max_srange = NULL, max_trange = NULL, ...){
 
-  # order the data
+  # order the data by space within time
   spint <- order_spint(data = data, xcoord = xcoord,
-                                  ycoord = ycoord, tcoord = tcoord)
-  o_index <- spint$data$index[spint$data$observed]
-  m_index <- spint$data$index[!spint$data$observed]
-  data_o <- spint$data[o_index, , drop = FALSE]
+                                  ycoord = ycoord, tcoord = tcoord, chol = FALSE)
 
-  # run the linear model and get residuals
-  # creating the model frame
-  stmodel_frame <- model.frame(formula, data_o,
+
+
+  # create the model frame using the provided formula
+  stmodel_frame <- model.frame(formula, spint$data_o,
                                na.action = stats::na.omit)
 
   # creating the fixed design matrix
   xo <- model.matrix(formula, stmodel_frame)
 
-  # creating the response
+  # creating the response column
   yo <- model.response(stmodel_frame)
 
-  lmod_r <- (yo - xo %*% (chol2inv(chol(t(xo) %*% xo)) %*% (t(xo) %*% yo)))
+  # find the linear model residuals
+  lmod_r <- as.vector((yo - xo %*% (chol2inv(chol(t(xo) %*% xo)) %*% (t(xo) %*% yo))))
+
+  # find the sample variance
   lmod_s2 <- sum(lmod_r^2) / (nrow(xo) - ncol(xo))
 
   # make the semivariogram
   sv <- st_empsv(response = lmod_r, xcoord = data_o[[xcoord]], ycoord = data_o[[ycoord]],
                    tcoord = data_o[[tcoord]], ...)
 
-  # transform the initial values
-  if (missing(max_v)){
+  # provide default value for the maximum possible variance
+  if (is.null(max_v)){
     max_v <- 4 * lmod_s2
   }
-  if (missing(max_srange)){
+  # provide default value for the maximum possible spatial range
+  if (is.null(max_srange)){
     max_srange <- 4 * max(spint$h_s)
   }
-  if (missing(max_trange)){
+  # provide default value for the maximum possible temporal range
+  if (is.null(max_trange)){
     max_trange <- 4 * max(spint$h_t)
   }
 
+  # making the covariance parameter estimation object with the appropriate class
+  covest_object <- make_covest_object(object_type = "covest", stcov = stcov,
+                               initial = initial, max_srange = max_srange,
+                               max_trange = max_trange, max_v = max_v,
+                               sp_cor = sp_cor, sv = sv, t_cor = t_cor, weights = weights)
+  # returning the parameter vector used for profiling (which does not help optimization here
+  # but does give us the abilit to easily set maxes on the overall variance and ranges)
 
-  if (chol) {
-    f_s <- h_make(data_o[[xcoord]], data_o[[ycoord]], ...)
-    f_t <- h_make(data_o[[tcoord]], ...)
-  } else {
-    f_s <- NULL
-    f_t <- NULL
-  }
-
-  est_object <- structure(list(initial = initial, xo = xo, yo = yo,
-                               co = NULL, sv = sv, sp_cor = sp_cor,
-                               t_cor = t_cor, max_srange = max_srange,
-                               max_trange = max_trange, max_v = max_v, weights = weights,
-                               h_s = spint$h_s, h_t = spint$h_t, f_s = f_s, f_t = f_t,
-                               chol = chol, diag_tol = diag_tol, logdet = FALSE,
-                               o_index = o_index, m_index = m_index), class = stcov)
-  est_object$xyc_o <- cbind(est_object$xo, est_object$yo, est_object$co)
-  est_object$lo_initial <- r2p_sv(est_object)
+  # estimate the profiled covariance parameters
+  covest_output <- optim(par = covest_object$initial_plo, fn = sv_fn,
+                         covest_object = covest_object, ...)
+  covest_output$par_r <- plo2r_sv(par = covest_output$par, covest_object = covest_object)
 
 
-  output <- covest_sv(est_object) # estimate the parameters
-  est_object$covparams <- output$par
 
-
-  if (chol){
-    est_object$rf_s <-  r_make(h = est_object$f_s, range = est_object$covparams[["s_range"]],
-                    structure = est_object$sp_cor)
-    est_object$rf_t <- r_make(h = est_object$f_t, range = est_object$covparams[["t_range"]],
-                   structure = est_object$t_cor)
-  } else {
-    est_object$r_s <- r_make(h = est_object$h_s, range = est_object$covparams[["s_range"]],
-                  structure = est_object$sp_cor)
-    est_object$r_t <- r_make(h = est_object$h_t, range = est_object$covparams[["t_range"]],
-           structure = est_object$t_cor)
-  }
+  # invert object
+  invert_object <- make_invert_object(stcov = stcov,
+                                      chol = chol, co = NULL,
+                                      covparams = covest_output$par_r,
+                                      diag_tol = diag_tol,
+                                      f_s = spint$f_s, f_t = spint$f_t,
+                                      h_s = spint$h_s, h_t = spint$h_t,
+                                      logdet = logdet,
+                                      m_index = spint$m_index,
+                                      o_index = spint$o_index,
+                                      sp_cor = sp_cor,
+                                      t_cor = t_cor,
+                                      xo = xo,
+                                      yo = yo)
   inverse <- invert(invert_object = est_object)
   est_object$siginv_o <- inverse$siginv_o
   beta <- betaest(est_object)

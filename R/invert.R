@@ -3,7 +3,8 @@ invert <- function(invert_object, ...) {
 }
 
 
-
+# make cov param vector a list within invert object
+# can just store r_s and r_t elsewhere for now in the invert object
 
 
 invert.productsum <- function(invert_object, ...) {

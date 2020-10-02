@@ -1,9 +1,9 @@
-r2p_sv <- function(estobject) {
-  UseMethod("r2p_sv", object = estobject)
+r2plo_sv <- function(covest_object) {
+  UseMethod("r2plo_sv", object = covest_object)
 }
 
-r2p_sv.productsum <- function(est_object){
-  params <- est_object$initial
+r2plo_sv.productsum <- function(covest_object){
+  params <- covest_object$initial
   s_vc <- c(params[["s_de"]], params[["s_ie"]])
   svar <- sum(s_vc)
   t_vc <- c(params[["t_de"]], params[["t_ie"]])
@@ -20,6 +20,8 @@ r2p_sv.productsum <- function(est_object){
   pparm <- c(pparm, var_prop = (svar + tvar + stvar) / max_v,
              srange_prop = params[["s_range"]] / max_srange,
              trange_prop = params[["t_range"]] / max_trange)
+  pparm <- log(pparm / (1 - pparm))
+  return(pparm)
 }
 
 
