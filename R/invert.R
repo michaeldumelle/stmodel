@@ -56,11 +56,11 @@ invert.productsum <- function(invert_object, ...) {
     logdet <- invert_object$logdet
     o_index <- invert_object$o_index
     m_index <- invert_object$m_index
+    n_s <- invert_object$n_s
+    n_t <- invert_object$n_t
 
-    n_s <- ncol(r_s)
-    n_t <- ncol(r_t)
-    n_st <- n_s * n_t
-    dense <- length(o_index) == n_st
+
+    dense <- length(o_index) == (n_s * n_t)
 
 
 
@@ -89,8 +89,8 @@ invert.productsum <- function(invert_object, ...) {
 
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(t_de, r_t, t_ie))
-    c_s <- chol(sigma_make(s_de, r_s, s_ie))
+    c_t <- chol(sigma_make(de = t_de, r_mx = r_t, ie = t_ie))
+    c_s <- chol(sigma_make(de = s_de, r_mx = r_s, ie = s_ie))
 
     ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s, n_t, "right")
               # st x st %*% (st x st * st x t) = st x t

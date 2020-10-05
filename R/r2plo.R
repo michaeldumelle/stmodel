@@ -17,9 +17,9 @@ r2plo_sv.productsum <- function(covest_object){
   n_t <- params[["t_ie"]] / tvar
   n_st <- params[["st_ie"]] / stvar
   pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t, n_st = n_st)
-  pparm <- c(pparm, var_prop = (svar + tvar + stvar) / max_v,
-             srange_prop = params[["s_range"]] / max_srange,
-             trange_prop = params[["t_range"]] / max_trange)
+  pparm <- c(pparm, var_prop = pmin(1, (svar + tvar + stvar) / covest_object$max_v),
+             srange_prop = params[["s_range"]] / covest_object$max_srange,
+             trange_prop = params[["t_range"]] / covest_object$max_trange)
   pparm <- log(pparm / (1 - pparm))
   return(pparm)
 }

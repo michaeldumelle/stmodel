@@ -1,13 +1,14 @@
 sigma_make <- function(de, r_mx, ie, v_ie, e = 1, scale = FALSE) {
   if (!scale) {
-    sigma <- de * r_mx
-    diag(sigma) <- diag(sigma) + ie
+    r_mx <- pmin(r_mx, 1)
+    sigma <- de * r_mx + ie * (r_mx == 1)
+    #diag(sigma) <- diag(sigma) + ie
     return(sigma)
   }
   else if (scale) {
     v_de <- 1 - v_ie
-    sigma <- e * v_de * r_mx
-    diag(sigma) <- diag(sigma) + e * v_ie
+    sigma <- e * v_de * r_mx + e * v_ie * (r_mx == 1)
+    #diag(sigma) <- diag(sigma) + e * v_ie
     return(sigma)
   } else {
     stop("scale must be TRUE or FALSE")

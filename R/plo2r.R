@@ -3,12 +3,12 @@ plo2r_sv <- function(par, covest_object){
 }
 
 plo2r_sv.productsum <- function(par, covest_object){
-  par <- exp(par) / (1 + exp(par))
-  lambda <- par[["lambda"]]
-  alpha <- par[["alpha"]]
-  n_s <- par[["n_s"]]
-  n_t <- par[["n_t"]]
-  n_st <- par[["n_st"]]
+  invlogit <- exp(par) / (1 + exp(par))
+  lambda <- invlogit[["lambda"]]
+  alpha <- invlogit[["alpha"]]
+  n_s <- invlogit[["n_s"]]
+  n_t <- invlogit[["n_t"]]
+  n_st <- invlogit[["n_st"]]
 
   s_de <- lambda * alpha * (1 - n_s)
   s_ie <- lambda * alpha * n_s
@@ -17,12 +17,12 @@ plo2r_sv.productsum <- function(par, covest_object){
   st_de <- (1 - lambda) * (1 - n_st)
   st_ie <- (1 - lambda) * n_st
 
-  ov_var <- covest_object$max_v * par[["var_prop"]]
-  rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
+  ov_var <- covest_object$max_v * invlogit[["var_prop"]]
+  rinvlogitm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
                       t_ie = t_ie, st_de = st_de, st_ie = st_ie),
-             s_range = covest_object$max_srange * par[["srange_prop"]],
-             t_range = covest_object$max_trange * par[["trange_prop"]])
-  return(rparm)
+             s_range = covest_object$max_srange * invlogit[["srange_prop"]],
+             t_range = covest_object$max_trange * invlogit[["trange_prop"]])
+  return(rinvlogitm)
 }
 
 

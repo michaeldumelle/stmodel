@@ -1,7 +1,7 @@
 multiply_z <- function(mx, z_type, n_s, n_t, side = c("right", "left", "p_right", "p_left", "pz_z", "z_pz")) {
   # multiplication of an arbitrary dimension matrix by z on the right
   # we first store the total number of observations in the dense data rectangle
-  n_st <- n_s * n_t
+
   side <- match.arg(side)
   switch(side,
          right = multiply_z_r(mx, z_type, n_s, n_t),
@@ -14,6 +14,7 @@ multiply_z <- function(mx, z_type, n_s, n_t, side = c("right", "left", "p_right"
 }
 
 multiply_z_r <- function(mx, z_type, n_s, n_t) {
+  n_st <- n_s * n_t
   n_row <- nrow(mx)
   if (z_type == "spatial"){
     # we take the appropriate entries in the matrix multiplied on the left and sum them
@@ -28,6 +29,7 @@ multiply_z_r <- function(mx, z_type, n_s, n_t) {
 }
 
 multiply_zp_l <- function(mx, z_type, n_s, n_t){
+  n_st <- n_s * n_t
   n_col <- ncol(mx)
   if (z_type == "spatial"){
     return(t(vapply(1:n_s, function(a) colSums(mx[seq(a, n_st, by = n_s), , drop = FALSE]), double(n_col))))
@@ -39,6 +41,7 @@ multiply_zp_l <- function(mx, z_type, n_s, n_t){
 }
 
 multiply_z_l <- function(mx, z_type, n_s, n_t){
+  n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(mx[rep(seq(1, n_t), times = n_s), , drop = FALSE])
   } else if (z_type == "temporal"){
@@ -49,6 +52,7 @@ multiply_z_l <- function(mx, z_type, n_s, n_t){
 }
 
 multiply_zp_r <- function(mx, z_type, n_s, n_t){
+  n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(mx[ , rep(seq(1, n_t), times = n_s), drop = FALSE])
   } else if (z_type == "temporal"){
@@ -59,6 +63,7 @@ multiply_zp_r <- function(mx, z_type, n_s, n_t){
 }
 
 multiply_zp_z <- function(z_type, n_s, n_t){
+  n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(diag(n_t, nrow = n_s, ncol = n_s))
   } else if (z_type == "temporal") {
@@ -69,6 +74,7 @@ multiply_zp_z <- function(z_type, n_s, n_t){
 }
 
 multiply_z_zp <- function(z_type, n_s, n_t){
+  n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(kronecker(matrix(1, nrow = n_t, ncol = n_t), diag(1, nrow = n_s, ncol = n_s)))
   } else if (z_type == "temporal") {
