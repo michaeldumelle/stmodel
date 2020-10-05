@@ -2,7 +2,7 @@ stlm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                  estmethod = c("reml", "svwls"), sp_cor, t_cor, weights, initial = NULL, chol,
                  diag_tol = 1e-4, max_v = NULL, max_srange = NULL, max_trange = NULL, ...){
   estmethod <- match.arg(estmethod)
-  switch(estmethod,
+  output <- switch(estmethod,
          "svwls" = stlm_svwls(formula = formula, xcoord = xcoord, ycoord = ycoord,
                               tcoord = tcoord, stcov = stcov, data = data,
                               sp_cor = sp_cor, t_cor = t_cor, weights = weights,
@@ -10,6 +10,8 @@ stlm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                               max_v = max_v, max_srange = max_srange, max_trange = max_trange,
                               ...),
          stop("choose valid estimation method"))
+  class(output) <- "stlm"
+  return(output)
 }
 
 stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
