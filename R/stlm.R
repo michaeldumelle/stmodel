@@ -20,7 +20,7 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
 
   # order the data by space within time
   spint <- order_spint(data = data, xcoord = xcoord,
-                                  ycoord = ycoord, tcoord = tcoord, chol = FALSE)
+                                  ycoord = ycoord, tcoord = tcoord, chol = chol)
 
 
 
@@ -62,6 +62,7 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   if (is.null(initial)){
     initial <- make_covparam_object(s_de = 1, s_ie = 1, t_de = 1,
                                     t_ie = 1, st_de = 1, st_ie = 1,
+                                    v_s = 0.5, v_t = 0.5,
                                     s_range = max_srange / 8, # 8 chosen so that it is half the max observed distance
                                     t_range = max_trange / 8, # 8 chosen so that it is half the max observed distance
                                     stcov = stcov)

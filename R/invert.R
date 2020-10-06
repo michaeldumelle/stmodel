@@ -67,10 +67,10 @@ invert.productsum <- function(invert_object, ...) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    diag(r_s) <- diag(r_s) + diag_tol
     r_s <- r_s / (1 + diag_tol)
-    diag(r_t) <- diag(r_t) + diag_tol
+    diag(r_s) <- 1
     r_t <- r_t / (1 + diag_tol)
+    diag(r_t) <- 1
     s_ie <- s_ie + diag_tol
     t_ie <- t_ie + diag_tol
     st_ie <- st_ie + diag_tol
@@ -224,17 +224,17 @@ invert.sum_with_error <- function(invert_object) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    diag(r_s) <- diag(r_s) + diag_tol
     r_s <- r_s / (1 + diag_tol)
-    diag(r_t) <- diag(r_t) + diag_tol
+    diag(r_s) <- 1
     r_t <- r_t / (1 + diag_tol)
+    diag(r_t) <- 1
     s_ie <- s_ie + diag_tol
     t_ie <- t_ie + diag_tol
     st_ie <- st_ie + diag_tol
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(t_de, r_t, t_ie))
-    c_s <- chol(sigma_make(s_de, r_s, s_ie))
+    c_t <- chol(sigma_make(de = t_de, r_mx = r_t, ie = t_ie))
+    c_s <- chol(sigma_make(de = s_de, r_mx = r_s, ie = s_ie))
 
     c_mt <- chol(chol2inv(c_t) + multiply_z(z_type = "temporal", n_s = n_s, n_t = n_t, side = "pz_z")/st_ie)
     ic_mt <- chol2inv(c_mt)
@@ -275,42 +275,89 @@ invert.sum_with_error <- function(invert_object) {
   return(output_non_null)
 }
 
-invert_product <- function(r_s, r_t, vs_ie, vt_ie, st_de,
-                              o_index, m_index, xyc_o, diag_tol, logdet) {
-
-  n_s <- ncol(r_s)
-  n_t <- ncol(r_t)
-  n_st <- n_s * n_t
-  dense <- length(o_index) == n_st
-
-  diag(r_s) <- diag(r_s) + diag_tol
-  diag(r_t) <- diag(r_t) + diag_tol
-  st_de <- st_de + diag_tol
-
-  scale_r_s <- sigma_make(r_mx = r_s, v_ie = vs_ie, e = 1, scale = TRUE)
-  c_scale_r_s  <- chol(scale_r_s)
-  scale_r_t <- sigma_make(r_mx = r_t, v_ie = vt_ie, e = 1, scale = TRUE)
-  c_scale_r_t  <- chol(scale_r_t)
-
-  siginv <- kronecker(chol2inv(c_scale_r_t), chol2inv(c_scale_r_s)) / st_de
-
-  if (dense) {
-    siginv_o <- siginv
-  } else {
-    c_mm <- chol(siginv[m_index, m_index])
-    siginv_o <- (siginv[o_index, o_index] - siginv[o_index, m_index] %*% (chol2inv(c_mm) %*% siginv[m_index, o_index])) %*% xyc_o
-  }
 
 
-  if (logdet){
-    logdet <- n_st * log(st_de) +
-      n_s * 2 * sum(log(diag(c_scale_r_t))) +
-      n_t * 2 * sum(log(diag(c_scale_r_s)))
-    if (!dense){
-      logdet <- logdet + 2 * sum(log(diag(c_mm)))
+
+
+
+
+invert.product <- function(invert_object) {
+
+  if (invert_object$chol) {
+
+    # layout the arguments
+    rf_s <- invert_object$rf_s
+    rf_t <- invert_object$rf_t
+    st_de <- invert_object$covparams[["st_de"]]
+    v_s <- invert_object$covparams[["v_s"]]
+    v_t <- invert_object$covparams[["v_t"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
+
+    scale_rf_s <- sigma_make(r_mx = rf_s, v_ie = v_s, e = 1, scale = TRUE)
+    scale_rf_t <- sigma_make(r_mx = rf_t, v_ie = v_s, e = 1, scale = TRUE)
+
+    cov_st <- st_de * scale_rf_s * scale_rf_t
+    sigma <- cov_st
+    diag(sigma) <- diag(sigma) + diag_tol
+    chol_sigma <- chol(sigma)
+    siginv <- chol2inv(chol_sigma)
+    siginv_o <- siginv %*% xyc_o
+    if (logdet){
+      logdet <- 2 * sum(log(diag(chol_sigma)))
+    } else {
+      logdet <- NULL
     }
   } else {
-    logdet <- NULL
+    # layout the arguments
+    r_s <- invert_object$r_s
+    r_t <- invert_object$r_t
+    st_de <- invert_object$covparams[["st_de"]]
+    v_s <- invert_object$covparams[["v_s"]]
+    v_t <- invert_object$covparams[["v_t"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
+    o_index <- invert_object$o_index
+    m_index <- invert_object$m_index
+    n_s <- invert_object$n_s
+    n_t <- invert_object$n_t
+    n_st <- n_s * n_t
+
+
+    dense <- length(o_index) == n_st
+
+    r_s <- r_s / (1 + diag_tol)
+    diag(r_s) <- 1
+    r_t <- r_t / (1 + diag_tol)
+    diag(r_t) <- 1
+
+    scale_r_s <- sigma_make(r_mx = r_s, v_ie = v_s, e = 1, scale = TRUE)
+    c_scale_r_s  <- chol(scale_r_s)
+    scale_r_t <- sigma_make(r_mx = r_t, v_ie = v_t, e = 1, scale = TRUE)
+    c_scale_r_t  <- chol(scale_r_t)
+
+    siginv <- kronecker(chol2inv(c_scale_r_t), chol2inv(c_scale_r_s)) / st_de
+
+    if (dense) {
+      siginv_o <- siginv %*% xyc_o
+    } else {
+      c_mm <- chol(siginv[m_index, m_index])
+      siginv_o <- (siginv[o_index, o_index] - siginv[o_index, m_index] %*% (chol2inv(c_mm) %*% siginv[m_index, o_index])) %*% xyc_o
+    }
+
+
+    if (logdet){
+      logdet <- n_st * log(st_de) +
+        n_s * 2 * sum(log(diag(c_scale_r_t))) +
+        n_t * 2 * sum(log(diag(c_scale_r_s)))
+      if (!dense){
+        logdet <- logdet + 2 * sum(log(diag(c_mm)))
+      }
+    } else {
+      logdet <- NULL
+    }
   }
   output <- list(siginv_o = siginv_o, logdet = logdet)
   output_non_null <- output[!unlist(lapply(output, is.null))]

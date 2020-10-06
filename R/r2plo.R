@@ -46,7 +46,15 @@ r2plo_sv.sum_with_error <- function(covest_object){
   return(pparm)
 }
 
-
+r2plo_sv.product <- function(covest_object){
+  params <- covest_object$initial
+  pparm <- c(v_s = params[["v_s"]], v_t = params[["v_t"]])
+  pparm <- c(pparm, var_prop = pmin(1, params[["st_de"]] / covest_object$max_v),
+             srange_prop = params[["s_range"]] / covest_object$max_srange,
+             trange_prop = params[["t_range"]] / covest_object$max_trange)
+  pparm <- log(pparm / (1 - pparm))
+  return(pparm)
+}
 
 
 

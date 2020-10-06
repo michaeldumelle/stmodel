@@ -77,7 +77,34 @@ sv_fn.sum_with_error <- function(par, covest_object, ...){
 
 
 sv_fn.product <- function(par, covest_object, ...){
+  # multiply overall var by exponentiated
+  # transform profiled to regular
+  plo2r <- plo2r_sv.product(par, covest_object)
+  # make correlation matrices
+  r_s <- r_make(h = covest_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = covest_object$sp_cor)
+  r_t <- r_make(h = covest_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = covest_object$t_cor)
+  r_st <- r_s * r_t
 
+  # make covariance matrices
+  sigma_st <- sigma_make(de = plo2r[["st_de"]], r_mx = r_st, ie = 0)
+  sigma <- sigma_st
+
+  # make C(0, 0)
+  vparams <- plo2r[["st_de"]]
+
+  # compute the semivariogram
+  theo_sv <- sum(vparams) - sigma
+
+  # create the weights
+  wts <- switch(covest_object$weights,
+                "cressie" = weight_cressie(sv = covest_object$sv, theo_sv = theo_sv),
+                stop("choose valid weights"))
+
+  # create the objective function
+  sumsq <- (covest_object$sv$mean_sqdifs - theo_sv)^2
+
+  # return the objective function
+  return(sum(wts * sumsq))
 }
 
 
