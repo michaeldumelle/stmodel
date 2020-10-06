@@ -58,16 +58,19 @@ invert.productsum <- function(invert_object, ...) {
     m_index <- invert_object$m_index
     n_s <- invert_object$n_s
     n_t <- invert_object$n_t
+    n_st <- n_s * n_t
+
+    dense <- length(o_index) == n_st
 
 
-    dense <- length(o_index) == (n_s * n_t)
 
 
-
-
-    ## adding diagonal tolerances for invertibility stability
+    ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
+    ## also rescaled so the diagonal is 1
     diag(r_s) <- diag(r_s) + diag_tol
+    r_s <- r_s / (1 + diag_tol)
     diag(r_t) <- diag(r_t) + diag_tol
+    r_t <- r_t / (1 + diag_tol)
     s_ie <- s_ie + diag_tol
     t_ie <- t_ie + diag_tol
     st_ie <- st_ie + diag_tol
@@ -165,56 +168,106 @@ invert.productsum <- function(invert_object, ...) {
   return(output_non_null)
 }
 
-invert_sum_with_error <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_ie,
-                              o_index, m_index, xyc_o, diag_tol, logdet) {
+invert.sum_with_error <- function(invert_object) {
 
-  n_s <- ncol(r_s)
-  n_t <- ncol(r_t)
-  n_st <- n_s * n_t
-  dense <- length(o_index) == n_st
+  if (invert_object$chol) {
 
-  ## adding diagonal tolerances for invertibility stability
-  diag(r_s) <- diag(r_s) + diag_tol
-  diag(r_t) <- diag(r_t) + diag_tol
-  s_ie <- s_ie + diag_tol
-  t_ie <- t_ie + diag_tol
-  st_ie <- st_ie + diag_tol
+    # layout the arguments
+    rf_s <- invert_object$rf_s
+    rf_t <- invert_object$rf_t
+    s_de <- invert_object$covparams[["s_de"]]
+    s_ie <- invert_object$covparams[["s_ie"]]
+    t_de <- invert_object$covparams[["t_de"]]
+    t_ie <- invert_object$covparams[["t_ie"]]
+    st_ie <- invert_object$covparams[["st_ie"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
 
-  # storing the output we will need for the iterative smw
-  c_t <- chol(sigma_make(t_de, r_t, t_ie))
-  c_s <- chol(sigma_make(s_de, r_s, s_ie))
-
-  c_mt <- chol(chol2inv(c_t) + multiply_z(z_type = "temporal", n_s = n_s, n_t = n_t, side = "pz_z")/st_ie)
-  ic_mt <- chol2inv(c_mt)
-  istpt <- - multiply_z(multiply_z(ic_mt, z_type = "temporal", n_s = n_s, n_t = n_t, side = "p_right"),
-                        z_type = "temporal", n_s = n_s, n_t = n_t, side = "left") / (st_ie^2)
-  diag(istpt) <- diag(istpt) + 1/st_ie
-
-
-  istpt_zs <- multiply_z(mx = istpt, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right")
-  c_ms <- chol(chol2inv(c_s) + multiply_z(mx = istpt_zs, z_type = "spatial", n_s = n_s, n_t = n_t, side = "p_left"))
-  ic_ms <- chol2inv(c_ms)
-
-
-  siginv <- istpt - istpt_zs %*% (ic_ms %*% t(istpt_zs))
-
-  if (dense) {
-    siginv_o <- siginv
+    cov_s <- s_de * rf_s + s_ie * (rf_s == 1)
+    cov_t <- t_de * rf_t + t_ie * (rf_t == 1)
+    cov_st <- st_ie * (rf_s == 1) * (rf_t == 1)
+    sigma <- cov_s + cov_t + cov_st
+    diag(sigma) <- diag(sigma) + diag_tol
+    chol_sigma <- chol(sigma)
+    siginv <- chol2inv(chol_sigma)
+    siginv_o <- siginv %*% xyc_o
+    if (logdet){
+      logdet <- 2 * sum(log(diag(chol_sigma)))
+    } else {
+      logdet <- NULL
+    }
   } else {
-    c_mm <- chol(siginv[m_index, m_index])
-    siginv_o <- (siginv[o_index, o_index] - siginv[o_index, m_index] %*% (chol2inv(c_mm) %*% siginv[m_index, o_index])) %*% xyc_o
-  }
+
+    # layout the arguments
+    r_s <- invert_object$r_s
+    r_t <- invert_object$r_t
+    s_de <- invert_object$covparams[["s_de"]]
+    s_ie <- invert_object$covparams[["s_ie"]]
+    t_de <- invert_object$covparams[["t_de"]]
+    t_ie <- invert_object$covparams[["t_ie"]]
+    st_ie <- invert_object$covparams[["st_ie"]]
+    xyc_o <- invert_object$xyc_o
+    diag_tol <- invert_object$diag_tol
+    logdet <- invert_object$logdet
+    o_index <- invert_object$o_index
+    m_index <- invert_object$m_index
+    n_s <- invert_object$n_s
+    n_t <- invert_object$n_t
+    n_st <- n_s * n_t
 
 
-  if (logdet) {
-    logdet <- n_st * (log(st_ie)) +
-      2 * sum(log(diag(c_t))) + 2 * sum(log(diag(c_mt))) +
-      2 * sum(log(diag(c_s))) + 2 * sum(log(diag(c_ms)))
+    dense <- length(o_index) == n_st
 
-    if (!dense)
-      logdet <- logdet + 2 * sum(log(diag(c_mm)))
-  } else {
-    logdet <- NULL
+
+
+
+    ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
+    ## also rescaled so the diagonal is 1
+    diag(r_s) <- diag(r_s) + diag_tol
+    r_s <- r_s / (1 + diag_tol)
+    diag(r_t) <- diag(r_t) + diag_tol
+    r_t <- r_t / (1 + diag_tol)
+    s_ie <- s_ie + diag_tol
+    t_ie <- t_ie + diag_tol
+    st_ie <- st_ie + diag_tol
+
+    # storing the output we will need for the iterative smw
+    c_t <- chol(sigma_make(t_de, r_t, t_ie))
+    c_s <- chol(sigma_make(s_de, r_s, s_ie))
+
+    c_mt <- chol(chol2inv(c_t) + multiply_z(z_type = "temporal", n_s = n_s, n_t = n_t, side = "pz_z")/st_ie)
+    ic_mt <- chol2inv(c_mt)
+    istpt <- - multiply_z(multiply_z(ic_mt, z_type = "temporal", n_s = n_s, n_t = n_t, side = "p_right"),
+                          z_type = "temporal", n_s = n_s, n_t = n_t, side = "left") / (st_ie^2)
+    diag(istpt) <- diag(istpt) + 1/st_ie
+
+
+    istpt_zs <- multiply_z(mx = istpt, z_type = "spatial", n_s = n_s, n_t = n_t, side = "right")
+    c_ms <- chol(chol2inv(c_s) + multiply_z(mx = istpt_zs, z_type = "spatial", n_s = n_s, n_t = n_t, side = "p_left"))
+    ic_ms <- chol2inv(c_ms)
+
+
+    siginv <- istpt - istpt_zs %*% (ic_ms %*% t(istpt_zs))
+
+    if (dense) {
+      siginv_o <- siginv %*% xyc_o
+    } else {
+      c_mm <- chol(siginv[m_index, m_index])
+      siginv_o <- (siginv[o_index, o_index] - siginv[o_index, m_index] %*% (chol2inv(c_mm) %*% siginv[m_index, o_index])) %*% xyc_o
+    }
+
+
+    if (logdet) {
+      logdet <- n_st * (log(st_ie)) +
+        2 * sum(log(diag(c_t))) + 2 * sum(log(diag(c_mt))) +
+        2 * sum(log(diag(c_s))) + 2 * sum(log(diag(c_ms)))
+
+      if (!dense)
+        logdet <- logdet + 2 * sum(log(diag(c_mm)))
+    } else {
+      logdet <- NULL
+    }
   }
 
   output <- list(siginv_o = siginv_o, logdet = logdet)

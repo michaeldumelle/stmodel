@@ -1,6 +1,6 @@
 st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
-                     sp_dist = "euclidean", t_dist = "euclidean", r_diff = "euclidean"){
+                     sp_dist = "euclidean", t_dist = "euclidean", r_diff = "euclidean", ...){
   h_spatial <- h_make(coord1 = xcoord, coord2 = ycoord, distmetric = sp_dist)
   h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
   h_temporal <- h_make(coord1 = tcoord, distmetric = t_dist)

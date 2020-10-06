@@ -62,8 +62,8 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   if (is.null(initial)){
     initial <- make_covparam_object(s_de = 1, s_ie = 1, t_de = 1,
                                     t_ie = 1, st_de = 1, st_ie = 1,
-                                    s_range = max_srange / 8,
-                                    t_range = max_trange / 8,
+                                    s_range = max_srange / 8, # 8 chosen so that it is half the max observed distance
+                                    t_range = max_trange / 8, # 8 chosen so that it is half the max observed distance
                                     stcov = stcov)
     vparm_names <- c("s_de", "s_ie", "t_de", "t_ie",
     "st_de", "st_ie")
@@ -80,9 +80,10 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   # but does give us the abilit to easily set maxes on the overall variance and ranges)
 
   # estimate the profiled covariance parameters
-  covest_output <- optim(par = covest_object$initial_plo, fn = sv_fn,
-                         covest_object = covest_object, method = "Nelder-Mead",
-                         control = list(reltol = 1e-10, maxit = 5000), ...)
+  covest_output <- covest_sv_optim(par = covest_object$initial_plo, fn = sv_fn,
+                         covest_object = covest_object, ...)
+
+  # need to write a wrapper to give optim defaults
   if (covest_output$convergence != 0) {
     warning("covariance parameter convergence may not have been achieved")
   }
@@ -114,7 +115,13 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
 
   # return the relevant output
   return(list(covparams = covest_output$par_r, betahat = betaest_output$betahat,
-              cov_betahat = betaest_output$cov_betahat))
+              cov_betahat = betaest_output$cov_betahat, objective = covest_output$value))
 }
 
 
+covest_sv_optim <- function(par, fn, covest_object, method = "Nelder-Mead",
+                         control = list(reltol = 1e-10, maxit = 5000), ...) {
+  return(optim(par = par, fn = fn,
+               covest_object = covest_object, method = method,
+               control = control, ...))
+}
