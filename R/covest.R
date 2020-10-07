@@ -1,84 +1,115 @@
-covest_productsum <- function(iv, s_range_max, t_range_max, v_max,
-                              sp_cor, t_cor, estmethod, xo, yo, h_s, h_t, n_s, n_t, chol = FALSE,
-                              diag_tol, sv){
-  # initial values must be a named vector
+covest <- function(par, covest_object){
+  UseMethod("covest", object = covest_object)
+}
 
+covest.svwls <- function(par, covest_object){
+  UseMethod("covest.svwls", object = covest_object)
+}
 
-  prof_iv <- r2p_productsum(s_de = iv[["s_de"]], s_ie = iv[["s_ie"]],
-                             t_de = iv[["t_de"]], t_ie = iv[["t_ie"]],
-                             st_de = iv[["st_de"]], st_ie = iv[["st_ie"]],
-                             estmethod = estmethod)
-  if (estmethod == "sv") {
-    pinit_vc[["ov_var"]] <- pinit_vc[["ov_var"]] / max_v
-  }
-  pinit_rc <- c(s_range = rinit_srange / max_srange, t_range = rinit_trange / max_trange)
-  lopinit <- log(c(pinit_vc, pinit_rc) / (1 - c(pinit_vc, pinit_rc)))
+covest.svwls.productsum <- function(par, covest_object){
+# multiply overall var by exponentiated
+# transform profiled to regular
+plo2r <- plo2r.svwls.productsum(par, covest_object)
+# make correlation matrices
+r_s <- r_make(h = covest_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = covest_object$sp_cor)
+r_t <- r_make(h = covest_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = covest_object$t_cor)
+r_st <- r_s * r_t
 
+# make covariance matrices
+sigma_s <- sigma_make(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
+sigma_t <- sigma_make(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
+sigma_st <- sigma_make(de = plo2r[["st_de"]], r_mx = r_st, ie = plo2r[["st_ie"]])
+sigma <- sigma_s + sigma_t + sigma_st
 
-  # likelihod function
-  if (estmethod %in% c("reml", "ml")){
-    optim(par = lopinit, fn = loglik_fn_productsum, xo = xo, dim_xo = dim_xo,
-          yo = yo, dim_yo = dim_yo, n_s = n_s, n_t = n_t,
-          h_s = h_s, h_t = h_t, sp_cor = sp_cor, t_cor = t_cor, max_srange = max_srange,
-          max_trange = max_trange, o_index = o_index, m_index = m_index, chol = chol,
-          diag_tol = diag_tol, estmethod = estmethod, method = "Nelder-Mead")
-  }
-  # semivariogram function
-  if (estmethod == "sv"){
-    optim(par = lopinit, fn = sv_fn_productsum, sv = sv, sp_cor = sp_cor,
-          t_cor = t_cor, max_srange = max_srange, max_trange = max_trange, max_v = max_v,
-          method = "Nelder-Mead")
-  }
+# make C(0, 0)
+vparams <- c(plo2r[["s_de"]], plo2r[["s_ie"]], plo2r[["t_de"]],
+             plo2r[["t_ie"]], plo2r[["st_de"]], plo2r[["st_ie"]])
+
+# compute the semivariogram
+theo_sv <- sum(vparams) - sigma
+
+# create the weights
+wts <- switch(covest_object$weights,
+              "cressie" = weight_cressie(sv = covest_object$sv, theo_sv = theo_sv),
+              stop("choose valid weights"))
+
+# create the objective function
+sumsq <- (covest_object$sv$mean_sqdifs - theo_sv)^2
+
+# return the objective function
+return(sum(wts * sumsq))
+}
+
+covest.svwls.sum_with_error <- function(par, covest_object, ...){
+  # multiply overall var by exponentiated
+  # transform profiled to regular
+  plo2r <- plo2r.svwls.sum_with_error(par, covest_object)
+  # make correlation matrices
+  r_s <- r_make(h = covest_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = covest_object$sp_cor)
+  r_t <- r_make(h = covest_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = covest_object$t_cor)
+  r_st <- r_s * r_t
+
+  # make covariance matrices
+  sigma_s <- sigma_make(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
+  sigma_t <- sigma_make(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
+  sigma_st <- sigma_make(0, r_mx = r_st, ie = plo2r[["st_ie"]])
+  sigma <- sigma_s + sigma_t + sigma_st
+
+  # make C(0, 0)
+  vparams <- c(plo2r[["s_de"]], plo2r[["s_ie"]], plo2r[["t_de"]],
+               plo2r[["t_ie"]], plo2r[["st_ie"]])
+
+  # compute the semivariogram
+  theo_sv <- sum(vparams) - sigma
+
+  # create the weights
+  wts <- switch(covest_object$weights,
+                "cressie" = weight_cressie(sv = covest_object$sv, theo_sv = theo_sv),
+                stop("choose valid weights"))
+
+  # create the objective function
+  sumsq <- (covest_object$sv$mean_sqdifs - theo_sv)^2
+
+  # return the objective function
+  return(sum(wts * sumsq))
 }
 
 
 
 
 
+covest.svwls.product <- function(par, covest_object, ...){
+  # multiply overall var by exponentiated
+  # transform profiled to regular
+  plo2r <- plo2r.svwls.product(par, covest_object)
+  # make correlation matrices
+  r_s <- r_make(h = covest_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = covest_object$sp_cor)
+  r_t <- r_make(h = covest_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = covest_object$t_cor)
+  r_st <- r_s * r_t
 
+  # make covariance matrices
+  sigma_st <- sigma_make(de = plo2r[["st_de"]], r_mx = r_st, ie = 0)
+  sigma <- sigma_st
 
+  # make C(0, 0)
+  vparams <- plo2r[["st_de"]]
 
+  # compute the semivariogram
+  theo_sv <- sum(vparams) - sigma
 
+  # create the weights
+  wts <- switch(covest_object$weights,
+                "cressie" = weight_cressie(sv = covest_object$sv, theo_sv = theo_sv),
+                stop("choose valid weights"))
 
+  # create the objective function
+  sumsq <- (covest_object$sv$mean_sqdifs - theo_sv)^2
 
+  # return the objective function
+  return(sum(wts * sumsq))
+}
 
-
-
-
-
-
-
-
-
-
-
-covest_productsum <- function(rinit_vc, rinit_srange, max_srange, rinit_trange, max_trange,
-                              xo, dim_xo, yo, dim_yo, n_s, n_t, h_s, h_t, sp_cor, t_cor, max_v, chol = FALSE,
-                              diag_tol, sv, estmethod){
-
-
-
-  pinit_vc <- r2p_productsum(rinit_vc[1], rinit_vc[2], rinit_vc[3],
-                             rinit_vc[4], rinit_vc[5], rinit_vc[6], estmethod)
-  if (estmethod == "sv") {
-    pinit_vc[["ov_var"]] <- pinit_vc[["ov_var"]] / max_v
-  }
-  pinit_rc <- c(s_range = rinit_srange / max_srange, t_range = rinit_trange / max_trange)
-  lopinit <- log(c(pinit_vc, pinit_rc) / (1 - c(pinit_vc, pinit_rc)))
-
-
-  # likelihod function
-  if (estmethod %in% c("reml", "ml")){
-  optim(par = lopinit, fn = loglik_fn_productsum, xo = xo, dim_xo = dim_xo,
-        yo = yo, dim_yo = dim_yo, n_s = n_s, n_t = n_t,
-        h_s = h_s, h_t = h_t, sp_cor = sp_cor, t_cor = t_cor, max_srange = max_srange,
-        max_trange = max_trange, o_index = o_index, m_index = m_index, chol = chol,
-        diag_tol = diag_tol, estmethod = estmethod, method = "Nelder-Mead")
-  }
-  # semivariogram function
-  if (estmethod == "sv"){
-    optim(par = lopinit, fn = sv_fn_productsum, sv = sv, sp_cor = sp_cor,
-          t_cor = t_cor, max_srange = max_srange, max_trange = max_trange, max_v = max_v,
-          method = "Nelder-Mead")
-  }
+weight_cressie <- function(sv, theo_sv) {
+  wts <- sv$n / theo_sv^2
+  return(wts)
 }

@@ -48,9 +48,13 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
   return(output)
 }
 
-stlmm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
-                       sp_cor, t_cor, weights, initial, chol,
-                       diag_tol, max_v, max_srange, max_trange, ...){
+stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
+                  estmethod = c("reml", "svwls"), sp_cor, t_cor, weights, initial = NULL, chol,
+                  diag_tol = 1e-4, max_v = NULL, max_srange = NULL,
+                  max_trange = NULL, optim_defaults, ...){
+
+  # to display the possible estimation methods
+  estmethod <- match.arg(estmethod)
 
   # store initial data frame objects
   # create the model frame using the provided formula
@@ -124,15 +128,13 @@ stlmm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   # but does give us the abilit to easily set maxes on the overall variance and ranges)
 
   # estimate the profiled covariance parameters
-  if (missing(method)) method <- "Nelder-Mead"
-  if (missing(reltol)) reltol <- 1e-8
-  if (missing(maxit)) maxit <- 5000
+  covest_output <- optim(par = covest_object$initial_plo, fn = covest,
+                         covest_object = covest_object,
+                         method = optim_defaults$method,
+                         control = optim_defaults$control,
+                         ...)
 
-  covest_output <- optim(par = covest_object$initial_plo, fn = sv_fn,
-                         covest_object = covest_object, method = method,
-                         control = control, ...)
-  # covest_output <- covest_sv_optim(par = covest_object$initial_plo, fn = sv_fn,
-  #                        covest_object = covest_object, ...)
+
 
   # need to write a wrapper to give optim defaults
   if (covest_output$convergence != 0) {
@@ -140,7 +142,7 @@ stlmm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
             setting new initial values, lowering the relative tolerance, or increasing
             the maximum iterations")
   }
-  covest_output$par_r <- plo2r_sv(par = covest_output$par, covest_object = covest_object)
+  covest_output$par_r <- plo2r(par = covest_output$par, covest_object = covest_object)
 
 
 
@@ -169,17 +171,24 @@ stlmm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   # return the relevant output
   Coefficients <-  betaest_output$betahat
   names(Coefficients) <- colnames(xo)
-  return(list(CovarianceParameters = covest_output$par_r, Coefficients = betaest_output$betahat,
+  stlmm_object <- structure(list(CovarianceParameters = covest_output$par_r, Coefficients = betaest_output$betahat,
               NamesCoefficients = colnames(raw_xo), CovCoefficients = betaest_output$cov_betahat,
               ObjectiveFn = covest_output$value,
               CovarianceForms = c(st_cov = stcov, sp_cor = sp_cor, t_cor = t_cor),
-              formula = formula, model = list(FixedDesignMatrix = raw_xo, Response = raw_yo)))
+              formula = formula, model = list(FixedDesignMatrix = raw_xo, Response = raw_yo)),
+              class = "stlmm")
+
+  # computing the residuals
+  stlmm_object$Residuals <- residuals(stlmm_object = stlmm_object)
+
+  # finally returning the overall output
+  return(stlmm_object)
 }
 
 
-covest_sv_optim <- function(par, fn, covest_object, method = "Nelder-Mead",
-                         control = list(reltol = 1e-10, maxit = 5000), ...) {
-  return(optim(par = par, fn = fn,
-               covest_object = covest_object, method = method,
-               control = control, ...))
-}
+# covest_sv_optim <- function(par, fn, covest_object, method = "Nelder-Mead",
+#                          control = list(reltol = 1e-10, maxit = 5000), ...) {
+#   return(optim(par = par, fn = fn,
+#                covest_object = covest_object, method = method,
+#                control = control, ...))
+# }

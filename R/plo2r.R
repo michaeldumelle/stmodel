@@ -1,8 +1,12 @@
-plo2r_sv <- function(par, covest_object){
-  UseMethod("plo2r_sv", object = covest_object)
+plo2r <- function(par, covest_object){
+  UseMethod("plo2r", object = covest_object)
 }
 
-plo2r_sv.productsum <- function(par, covest_object){
+plo2r.svwls <- function(par, covest_object){
+  UseMethod("plo2r.svwls", object = covest_object)
+}
+
+plo2r.svwls.productsum <- function(par, covest_object){
   invlogit <- exp(par) / (1 + exp(par))
   lambda <- invlogit[["lambda"]]
   alpha <- invlogit[["alpha"]]
@@ -26,7 +30,7 @@ plo2r_sv.productsum <- function(par, covest_object){
 }
 
 
-plo2r_sv.sum_with_error <- function(par, covest_object){
+plo2r.svwls.sum_with_error <- function(par, covest_object){
   invlogit <- exp(par) / (1 + exp(par))
   lambda <- invlogit[["lambda"]]
   alpha <- invlogit[["alpha"]]
@@ -48,7 +52,7 @@ plo2r_sv.sum_with_error <- function(par, covest_object){
   return(rparm)
 }
 
-plo2r_sv.product <- function(par, covest_object){
+plo2r.svwls.product <- function(par, covest_object){
   invlogit <- exp(par) / (1 + exp(par))
   v_s <- invlogit[["v_s"]]
   v_t <- invlogit[["v_t"]]

@@ -29,7 +29,7 @@ r2plo.svwls.productsum <- function(covest_object){
 }
 
 
-r2plo_sv.sum_with_error <- function(covest_object){
+r2plo.svwls.sum_with_error <- function(covest_object){
   params <- covest_object$initial
   s_vc <- c(params[["s_de"]], params[["s_ie"]])
   svar <- sum(s_vc)
@@ -50,7 +50,7 @@ r2plo_sv.sum_with_error <- function(covest_object){
   return(pparm)
 }
 
-r2plo_sv.product <- function(covest_object){
+r2plo.svwls.product <- function(covest_object){
   params <- covest_object$initial
   pparm <- c(v_s = params[["v_s"]], v_t = params[["v_t"]])
   pparm <- c(pparm, var_prop = pmin(1, params[["st_de"]] / covest_object$max_v),
@@ -61,49 +61,4 @@ r2plo_sv.product <- function(covest_object){
 }
 
 
-
-r2p_productsum <- function(s_de, s_ie, t_de, t_ie, st_de, st_ie, estmethod){
-  s_vc <- c(s_de, s_ie)
-  svar <- sum(s_vc)
-  t_vc <- c(t_de, t_ie)
-  tvar <- sum(t_vc)
-  st_vc <- c(st_de, st_ie)
-  stvar <- sum(st_vc)
-  vc <- c(s_vc, t_vc, st_vc)
-  lambda <- (svar + tvar) / (svar + tvar + stvar)
-  alpha <- svar / (svar + tvar)
-  n_s <- s_ie / svar
-  n_t <- t_ie / tvar
-  n_st <- st_ie / stvar
-  pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t, n_st = n_st)
-  if (estmethod == "sv") {
-    pparm <- c(pparm, ov_var = (svar + tvar + stvar))
-  }
-  return(pparm)
-}
-
-r2p_sum_with_error <- function(s_de, s_ie, t_de, t_ie, st_ie, estmethod){
-  s_vc <- c(s_de, s_ie)
-  svar <- sum(s_vc)
-  t_vc <- c(t_de, t_ie)
-  tvar <- sum(t_vc)
-  vc <- c(s_vc, t_vc, st_ie)
-  lambda <- (svar + tvar) / (svar + tvar + st_ie)
-  alpha <- svar / (svar + tvar)
-  n_s <- s_ie / svar
-  n_t <- t_ie / tvar
-  pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t)
-  if (estmethod == "sv") {
-    pparm <- c(pparm, ov_var = (svar + tvar + st_ie))
-  }
-  return(pparm)
-}
-
-r2p_product <- function(v_s, v_t, st_de, estmethod){
-  pparm <- c(v_s = v_s, v_t = v_t)
-  if (estmethod == "sv") {
-    pparm <- c(pparm, ov_var = st_de)
-  }
-  return(pparm)
-}
 

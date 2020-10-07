@@ -7,7 +7,7 @@ sv_fn <- function(par, covest_object, ...){
 sv_fn.productsum <- function(par, covest_object, ...){
   # multiply overall var by exponentiated
   # transform profiled to regular
-  plo2r <- plo2r_sv.productsum(par, covest_object)
+  plo2r <- plo2r.sv.productsum(par, covest_object)
   # make correlation matrices
   r_s <- r_make(h = covest_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = covest_object$sp_cor)
   r_t <- r_make(h = covest_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = covest_object$t_cor)
