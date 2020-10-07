@@ -35,19 +35,20 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
   m_index <- data$index[!data$observed]
 
   # create a subsetted data frame of the observed values
-  data_o <- data[o_index, , drop = FALSE]
+  ordered_data_o <- data[o_index, , drop = FALSE]
 
   # setting the cholesky distances matrices or NULL
   if (chol) {
-    f_s <- h_make(data_o[[xcoord]], data_o[[ycoord]], ...)
-    f_t <- h_make(data_o[[tcoord]], ...)
+    f_s <- h_make(ordered_data[[xcoord]], ordered_data[[ycoord]], ...)
+    f_t <- h_make(ordered_data[[tcoord]], ...)
   } else {
     f_s <- NULL
     f_t <- NULL
   }
   #raw_data is saved because the data merging mixes up the indices
-  return(list(data = raw_data, data_o = data_o, h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
-              f_s = f_s, f_t = f_t, us = us, ut = ut))
+  return(list(ordered_data_dense = data, ordered_data_o = ordered_data_o,
+              h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
+              f_s = f_s, f_t = f_t, key_s = us, key_t = ut))
 }
 
 
