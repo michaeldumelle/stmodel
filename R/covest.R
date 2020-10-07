@@ -113,3 +113,5 @@ weight_cressie <- function(sv, theo_sv) {
   wts <- sv$n / theo_sv^2
   return(wts)
 }
+
+

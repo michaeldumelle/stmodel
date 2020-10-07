@@ -70,19 +70,20 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
   # but does give us the abilit to easily set maxes on the overall variance and ranges)
 
   # estimate the profiled covariance parameters
-  covest_output <- optim(par = data_object$initial_plo, fn = covest,
-                         data_object = data_object,
-                         method = optim_defaults$method,
-                         control = optim_defaults$control,
-                         ...)
-
-  # need to write a wrapper to give optim defaults
-  if (covest_output$convergence != 0) {
-    warning("covariance parameter convergence may not have been achieved - consider
-            setting new initial values, lowering the relative tolerance, or increasing
-            the maximum iterations")
-  }
-  covest_output$par_r <- plo2r(par = covest_output$par, data_object = data_object)
+  covest_output <- covest_wrapper(data_object = data_object, optim_defaults = optim_defaults, ...)
+  # covest_output <- optim(par = data_object$initial_plo, fn = covest,
+  #                        data_object = data_object,
+  #                        method = optim_defaults$method,
+  #                        control = optim_defaults$control,
+  #                        ...)
+  #
+  # # need to write a wrapper to give optim defaults
+  # if (covest_output$convergence != 0) {
+  #   warning("covariance parameter convergence may not have been achieved - consider
+  #           setting new initial values, lowering the relative tolerance, or increasing
+  #           the maximum iterations")
+  # }
+  # covest_output$par_r <- plo2r(par = covest_output$par, data_object = data_object)
 
 
 
