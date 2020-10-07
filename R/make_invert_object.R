@@ -1,34 +1,31 @@
 make_invert_object <- function(stcov,
                                chol, co = NULL,
                                covparams, diag_tol,
-                               f_s, f_t,
-                               h_s, h_t,
+                               h_s_large, h_t_large,
+                               h_s_small, h_t_small,
+                               n_s, n_t,
                                logdet, m_index,
                                o_index, sp_cor,
                                t_cor, xo,
                                yo, ...){
   xyc_o <- cbind(xo, yo, co)
   if (chol){
-    r_s <- NULL
-    n_s <- NULL
-    n_t <- NULL
-    r_t <- NULL
-    rf_s <-  r_make(h = f_s, range = covparams[["s_range"]], structure = sp_cor)
-    rf_t <- r_make(h = f_t, range = covparams[["t_range"]], structure = t_cor)
+    r_s_small <- NULL
+    r_t_small <- NULL
+    r_s_large <-  make_r(h = h_s_large, range = covparams[["s_range"]], structure = sp_cor)
+    r_t_large <- make_r(h = h_t_large, range = covparams[["t_range"]], structure = t_cor)
   } else {
-    r_s <-  r_make(h = h_s, range = covparams[["s_range"]], structure = sp_cor)
-    n_s <- ncol(r_s)
-    r_t <- r_make(h = h_t, range = covparams[["t_range"]], structure = t_cor)
-    n_t <- ncol(r_t)
-    rf_s <- NULL
-    rf_t <- NULL
+    r_s_small <-  make_r(h = h_s_small, range = covparams[["s_range"]], structure = sp_cor)
+    r_t_small <- make_r(h = h_t_small, range = covparams[["t_range"]], structure = t_cor)
+    r_s_large <- NULL
+    r_t_large <- NULL
   }
   invert_object <- structure(list(chol = chol,
                                   covparams = covparams, diag_tol = diag_tol,
                                   logdet = logdet, m_index = m_index,
                                   n_s = n_s, n_t = n_t,
-                                  o_index = o_index, r_s = r_s, r_t = r_t,
-                                  rf_s = rf_s, rf_t = rf_t,
+                                  o_index = o_index, r_s_small = r_s_small, r_t_small = r_t_small,
+                                  r_s_large = r_s_large, r_t_large = r_t_large,
                                   sp_cor = sp_cor, t_cor = t_cor,
                                   xyc_o = xyc_o),
                              class = stcov)

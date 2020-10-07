@@ -4,7 +4,7 @@ invert <- function(invert_object, ...) {
 
 
 # make cov param vector a list within invert object
-# can just store r_s and r_t elsewhere for now in the invert object
+# can just store r_s_small and r_t_small elsewhere for now in the invert object
 
 
 invert.productsum <- function(invert_object, ...) {
@@ -14,8 +14,8 @@ invert.productsum <- function(invert_object, ...) {
   if (invert_object$chol) {
 
     # layout the arguments
-    rf_s <- invert_object$rf_s
-    rf_t <- invert_object$rf_t
+    r_s_large <- invert_object$r_s_large
+    r_t_large <- invert_object$r_t_large
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -26,9 +26,9 @@ invert.productsum <- function(invert_object, ...) {
     diag_tol <- invert_object$diag_tol
     logdet <- invert_object$logdet
 
-    cov_s <- s_de * rf_s + s_ie * (rf_s == 1)
-    cov_t <- t_de * rf_t + t_ie * (rf_t == 1)
-    cov_st <- st_de * rf_t * rf_s + st_ie * (rf_s == 1) * (rf_t == 1)
+    cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
+    cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
+    cov_st <- st_de * r_t_large * r_s_large + st_ie * (r_s_large == 1) * (r_t_large == 1)
     sigma <- cov_s + cov_t + cov_st
     diag(sigma) <- diag(sigma) + diag_tol
     chol_sigma <- chol(sigma)
@@ -43,8 +43,8 @@ invert.productsum <- function(invert_object, ...) {
 
 
     # layout the arguments
-    r_s <- invert_object$r_s
-    r_t <- invert_object$r_t
+    r_s_small <- invert_object$r_s_small
+    r_t_small <- invert_object$r_t_small
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -67,22 +67,22 @@ invert.productsum <- function(invert_object, ...) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    r_s <- r_s / (1 + diag_tol)
-    diag(r_s) <- 1
-    r_t <- r_t / (1 + diag_tol)
-    diag(r_t) <- 1
+    r_s_small <- r_s_small / (1 + diag_tol)
+    diag(r_s_small) <- 1
+    r_t_small <- r_t_small / (1 + diag_tol)
+    diag(r_t_small) <- 1
     s_ie <- s_ie + diag_tol
     t_ie <- t_ie + diag_tol
     st_ie <- st_ie + diag_tol
 
     ## finding eigendecompositions
-    r_s_eigen <- eigen(r_s)
-    r_t_eigen <- eigen(r_t)
+    r_s_small_eigen <- eigen(r_s_small)
+    r_t_small_eigen <- eigen(r_t_small)
 
     ## creating w matrix
-    w <- kronecker(r_t_eigen$vectors, r_s_eigen$vectors)
+    w <- kronecker(r_t_small_eigen$vectors, r_s_small_eigen$vectors)
     # creating v matrix
-    v <- st_de * kronecker(r_t_eigen$values, r_s_eigen$values) + st_ie
+    v <- st_de * kronecker(r_t_small_eigen$values, r_s_small_eigen$values) + st_ie
     # creating inverse square root of v matrix
     vinvroot <- 1 / sqrt(v)
     # creating inverse of w * sqrt(v)
@@ -92,8 +92,8 @@ invert.productsum <- function(invert_object, ...) {
 
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(de = t_de, r_mx = r_t, ie = t_ie))
-    c_s <- chol(sigma_make(de = s_de, r_mx = r_s, ie = s_ie))
+    c_t <- chol(sigma_make(de = t_de, r_mx = r_t_small, ie = t_ie))
+    c_s <- chol(sigma_make(de = s_de, r_mx = r_s_small, ie = s_ie))
 
     ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s, n_t, "right")
               # st x st %*% (st x st * st x t) = st x t
@@ -173,8 +173,8 @@ invert.sum_with_error <- function(invert_object) {
   if (invert_object$chol) {
 
     # layout the arguments
-    rf_s <- invert_object$rf_s
-    rf_t <- invert_object$rf_t
+    r_s_large <- invert_object$r_s_large
+    r_t_large <- invert_object$r_t_large
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -184,9 +184,9 @@ invert.sum_with_error <- function(invert_object) {
     diag_tol <- invert_object$diag_tol
     logdet <- invert_object$logdet
 
-    cov_s <- s_de * rf_s + s_ie * (rf_s == 1)
-    cov_t <- t_de * rf_t + t_ie * (rf_t == 1)
-    cov_st <- st_ie * (rf_s == 1) * (rf_t == 1)
+    cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
+    cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
+    cov_st <- st_ie * (r_s_large == 1) * (r_t_large == 1)
     sigma <- cov_s + cov_t + cov_st
     diag(sigma) <- diag(sigma) + diag_tol
     chol_sigma <- chol(sigma)
@@ -200,8 +200,8 @@ invert.sum_with_error <- function(invert_object) {
   } else {
 
     # layout the arguments
-    r_s <- invert_object$r_s
-    r_t <- invert_object$r_t
+    r_s_small <- invert_object$r_s_small
+    r_t_small <- invert_object$r_t_small
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -224,17 +224,17 @@ invert.sum_with_error <- function(invert_object) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    r_s <- r_s / (1 + diag_tol)
-    diag(r_s) <- 1
-    r_t <- r_t / (1 + diag_tol)
-    diag(r_t) <- 1
+    r_s_small <- r_s_small / (1 + diag_tol)
+    diag(r_s_small) <- 1
+    r_t_small <- r_t_small / (1 + diag_tol)
+    diag(r_t_small) <- 1
     s_ie <- s_ie + diag_tol
     t_ie <- t_ie + diag_tol
     st_ie <- st_ie + diag_tol
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(de = t_de, r_mx = r_t, ie = t_ie))
-    c_s <- chol(sigma_make(de = s_de, r_mx = r_s, ie = s_ie))
+    c_t <- chol(sigma_make(de = t_de, r_mx = r_t_small, ie = t_ie))
+    c_s <- chol(sigma_make(de = s_de, r_mx = r_s_small, ie = s_ie))
 
     c_mt <- chol(chol2inv(c_t) + multiply_z(z_type = "temporal", n_s = n_s, n_t = n_t, side = "pz_z")/st_ie)
     ic_mt <- chol2inv(c_mt)
@@ -286,8 +286,8 @@ invert.product <- function(invert_object) {
   if (invert_object$chol) {
 
     # layout the arguments
-    rf_s <- invert_object$rf_s
-    rf_t <- invert_object$rf_t
+    r_s_large <- invert_object$r_s_large
+    r_t_large <- invert_object$r_t_large
     st_de <- invert_object$covparams[["st_de"]]
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
@@ -295,10 +295,10 @@ invert.product <- function(invert_object) {
     diag_tol <- invert_object$diag_tol
     logdet <- invert_object$logdet
 
-    scale_rf_s <- sigma_make(r_mx = rf_s, v_ie = v_s, e = 1, scale = TRUE)
-    scale_rf_t <- sigma_make(r_mx = rf_t, v_ie = v_s, e = 1, scale = TRUE)
+    scale_r_s_large <- sigma_make(r_mx = r_s_large, v_ie = v_s, e = 1, scale = TRUE)
+    scale_r_t_large <- sigma_make(r_mx = r_t_large, v_ie = v_s, e = 1, scale = TRUE)
 
-    cov_st <- st_de * scale_rf_s * scale_rf_t
+    cov_st <- st_de * scale_r_s_large * scale_r_t_large
     sigma <- cov_st
     diag(sigma) <- diag(sigma) + diag_tol
     chol_sigma <- chol(sigma)
@@ -311,8 +311,8 @@ invert.product <- function(invert_object) {
     }
   } else {
     # layout the arguments
-    r_s <- invert_object$r_s
-    r_t <- invert_object$r_t
+    r_s_small <- invert_object$r_s_small
+    r_t_small <- invert_object$r_t_small
     st_de <- invert_object$covparams[["st_de"]]
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
@@ -328,17 +328,17 @@ invert.product <- function(invert_object) {
 
     dense <- length(o_index) == n_st
 
-    r_s <- r_s / (1 + diag_tol)
-    diag(r_s) <- 1
-    r_t <- r_t / (1 + diag_tol)
-    diag(r_t) <- 1
+    r_s_small <- r_s_small / (1 + diag_tol)
+    diag(r_s_small) <- 1
+    r_t_small <- r_t_small / (1 + diag_tol)
+    diag(r_t_small) <- 1
 
-    scale_r_s <- sigma_make(r_mx = r_s, v_ie = v_s, e = 1, scale = TRUE)
-    c_scale_r_s  <- chol(scale_r_s)
-    scale_r_t <- sigma_make(r_mx = r_t, v_ie = v_t, e = 1, scale = TRUE)
-    c_scale_r_t  <- chol(scale_r_t)
+    scale_r_s_small <- sigma_make(r_mx = r_s_small, v_ie = v_s, e = 1, scale = TRUE)
+    c_scale_r_s_small  <- chol(scale_r_s_small)
+    scale_r_t_small <- sigma_make(r_mx = r_t_small, v_ie = v_t, e = 1, scale = TRUE)
+    c_scale_r_t_small  <- chol(scale_r_t_small)
 
-    siginv <- kronecker(chol2inv(c_scale_r_t), chol2inv(c_scale_r_s)) / st_de
+    siginv <- kronecker(chol2inv(c_scale_r_t_small), chol2inv(c_scale_r_s_small)) / st_de
 
     if (dense) {
       siginv_o <- siginv %*% xyc_o
@@ -350,8 +350,8 @@ invert.product <- function(invert_object) {
 
     if (logdet){
       logdet <- n_st * log(st_de) +
-        n_s * 2 * sum(log(diag(c_scale_r_t))) +
-        n_t * 2 * sum(log(diag(c_scale_r_s)))
+        n_s * 2 * sum(log(diag(c_scale_r_t_small))) +
+        n_t * 2 * sum(log(diag(c_scale_r_s_small)))
       if (!dense){
         logdet <- logdet + 2 * sum(log(diag(c_mm)))
       }
@@ -367,8 +367,8 @@ invert.product <- function(invert_object) {
 #
 # x = rep(1:4, times = 4)
 # t = rep(1:4, each = 4)
-# r_s = exp(-h_make(unique(x)))
-# r_t = exp(-h_make(unique(t)))
+# r_s_small = exp(-h_make(unique(x)))
+# r_t_small = exp(-h_make(unique(t)))
 # # s_de = t_de = s_ie = t_ie = st_ie = 0
 # # st_de <- 6
 # # vs_ie = vt_ie = 0.5
@@ -379,16 +379,16 @@ invert.product <- function(invert_object) {
 # m_index = full_index[index_sample]
 # xyc_o = matrix(1, nrow = length(x))
 # diag_tol = 1e-4
-# n_s <- ncol(r_s)
-# n_t <- ncol(r_t)
+# n_s <- ncol(r_s_small)
+# n_t <- ncol(r_t_small)
 # n_st <- n_s * n_t
 # # full_index = o_index[-sample(full_index, 10)]
 # # m_index <- full_index[-c(1, 100, 400, 500, 600, 725, 900, 1250)]
 # dense <- length(o_index) == n_st
 #
 # ## adding diagonal tolerances for invertibility stability
-# diag(r_s) <- diag(r_s) + diag_tol
-# diag(r_t) <- diag(r_t) + diag_tol
+# diag(r_s_small) <- diag(r_s_small) + diag_tol
+# diag(r_t_small) <- diag(r_t_small) + diag_tol
 # s_ie <- s_ie + diag_tol
 # t_ie <- t_ie + diag_tol
 # st_ie <- st_ie + diag_tol
@@ -397,7 +397,7 @@ invert.product <- function(invert_object) {
 # xyc_o = matrix(1, nrow = length(x))
 # xyc_o <- xyc_o[o_index, , drop = FALSE]
 # xyc_o = cbind(xyc_o, rnorm(length(o_index)))
-# test = invert_product(r_s = r_s, r_t = r_t, vs_ie = vs_ie, vt_ie = vt_ie, st_de = st_de,
+# test = invert_product(r_s_small = r_s_small, r_t_small = r_t_small, vs_ie = vs_ie, vt_ie = vt_ie, st_de = st_de,
 #                       o_index = o_index, m_index = m_index, xyc_o = xyc_o, diag_tol = diag_tol)
 #
 #
@@ -415,14 +415,14 @@ invert.product <- function(invert_object) {
 # all.equal(testf[, 1:2], testf[, 3:4])
 # log_determinant = FALSE
 #
-# microbenchmark::microbenchmark(invert_product(r_s = r_s, r_t = r_t, vs_ie = vs_ie, vt_ie = vt_ie, st_de = st_de,
+# microbenchmark::microbenchmark(invert_product(r_s_small = r_s_small, r_t_small = r_t_small, vs_ie = vs_ie, vt_ie = vt_ie, st_de = st_de,
 #                o_index = o_index, m_index = m_index, xyc_o = xyc_o, diag_tol = diag_tol, logdet = logdet), times = 15)
-# microbenchmark::microbenchmark(invert_sum_with_error(r_s, r_t, s_de, s_ie, t_de, t_ie,
+# microbenchmark::microbenchmark(invert_sum_with_error(r_s_small, r_t_small, s_de, s_ie, t_de, t_ie,
 #                                                      st_ie, o_index, m_index,  xyc_o, diag_tol = diag_tol, logdet = logdet), times = 15)
-# microbenchmark::microbenchmark(invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de,
+# microbenchmark::microbenchmark(invert_productsum(r_s_small, r_t_small, s_de, s_ie, t_de, t_ie, st_de,
 #                                                  st_ie, o_index, m_index,  xyc_o, diag_tol, logdet = logdet), times = 15)
 # microbenchmark::microbenchmark(chol2inv(chol(pscov)) %*% xyc_o, times = 15)
-# test3 = invert_product(r_s, r_t, vs_ie, vt_ie, st_de,
+# test3 = invert_product(r_s_small, r_t_small, vs_ie, vt_ie, st_de,
 #                o_index, m_index, xyc_o, diag_tol)
 
 
@@ -440,7 +440,7 @@ invert.product <- function(invert_object) {
 
 
 
-# invert <- function(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+# invert <- function(r_s_small, r_t_small, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 #                    o_index, m_index, xyc_o, diag_tol = 1e-4,
 #                    st_cov = c("productsum", "product", "sum_with_error"),
 #                    log_determinant = TRUE) {
@@ -450,7 +450,7 @@ invert.product <- function(invert_object) {
 #
 #   st_cov <- match.arg(st_cov)
 #   switch(st_cov,
-#          "productsum" = invert_productsum(r_s, r_t, s_de, s_ie, t_de, t_ie, st_de, st_ie,
+#          "productsum" = invert_productsum(r_s_small, r_t_small, s_de, s_ie, t_de, t_ie, st_de, st_ie,
 #                                           o_index, m_index, xyc_o, diag_tol),
 #          "product" = invert_product(),
 #          "sum_with_error" = invert_sum_with_error(),

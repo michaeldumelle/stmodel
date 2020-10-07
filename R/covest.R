@@ -11,8 +11,8 @@ covest.svwls.productsum <- function(par, data_object){
 # transform profiled to regular
 plo2r <- plo2r.svwls.productsum(par, data_object)
 # make correlation matrices
-r_s <- r_make(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
-r_t <- r_make(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
+r_s <- make_r(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
+r_t <- make_r(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
 r_st <- r_s * r_t
 
 # make covariance matrices
@@ -45,8 +45,8 @@ covest.svwls.sum_with_error <- function(par, data_object, ...){
   # transform profiled to regular
   plo2r <- plo2r.svwls.sum_with_error(par, data_object)
   # make correlation matrices
-  r_s <- r_make(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
-  r_t <- r_make(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
+  r_s <- make_r(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
+  r_t <- make_r(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
   r_st <- r_s * r_t
 
   # make covariance matrices
@@ -83,8 +83,8 @@ covest.svwls.product <- function(par, data_object, ...){
   # transform profiled to regular
   plo2r <- plo2r.svwls.product(par, data_object)
   # make correlation matrices
-  r_s <- r_make(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
-  r_t <- r_make(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
+  r_s <- make_r(h = data_object$sv$avg_hsp, range = plo2r[["s_range"]], structure = data_object$sp_cor)
+  r_t <- make_r(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure = data_object$t_cor)
   r_st <- r_s * r_t
 
   # make covariance matrices
@@ -99,7 +99,7 @@ covest.svwls.product <- function(par, data_object, ...){
 
   # create the weights
   wts <- switch(data_object$weights,
-                "cressie" = weight_cressie(sv = data_object$sv, theo_sv = theo_sv),
+                "cressie" = weights_cressie(sv = data_object$sv, theo_sv = theo_sv),
                 stop("choose valid weights"))
 
   # create the objective function
@@ -109,7 +109,7 @@ covest.svwls.product <- function(par, data_object, ...){
   return(sum(wts * sumsq))
 }
 
-weight_cressie <- function(sv, theo_sv) {
+weights_cressie <- function(sv, theo_sv) {
   wts <- sv$n / theo_sv^2
   return(wts)
 }

@@ -1,32 +1,46 @@
-make_data_object <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
-                             estmethod, sp_cor, t_cor, weights, initial = NULL, chol,
-                             diag_tol = 1e-4, max_v = NULL, max_srange = NULL,
-                             max_trange = NULL, ...){
+make_data_object <- function(formula, xcoord, ycoord, tcoord, stcov, estmethod, data, ...){
+  data_object <- switch(estmethod,
+         "svwls" = make_data_object_svwls(formula = formula, xcoord = xcoord,
+                                          ycoord = ycoord, tcoord = tcoord,
+                                          stcov = stcov, estmethod = estmethod,
+                                          data = data, ...),
+         stop("Need valid estimation method"))
+  return(data_object)
+}
 
-  stmodel_frame <- model.frame(formula = formula, data,
+
+
+make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estmethod, data,
+                             sp_cor, t_cor, chol, initial,
+                             max_v, max_s_range,
+                             max_t_range, weights, ...){
+
+  original_data <- data
+  # making the original model frame
+  original_stmodel_frame <- model.frame(formula = formula, data = original_data,
                                     na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  xo <- model.matrix(formula, stmodel_frame)
+  original_xo <- model.matrix(object = formula, data = original_stmodel_frame)
 
   # creating the response column
-  yo <- model.response(stmodel_frame)
+  original_yo <- model.response(data = original_stmodel_frame)
 
   # order the data by space within time
-  spint <- order_spint(data = data, xcoord = xcoord,
+  spint <- order_spint(data = original_data, xcoord = xcoord,
                        ycoord = ycoord, tcoord = tcoord, chol = chol)
 
 
 
   # create the model frame using the provided formula
-  ordered_stmodel_frame <- model.frame(formula, spint$ordered_data_o,
+  ordered_stmodel_frame <- model.frame(formula = formula, data = spint$ordered_data_o,
                                na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  ordered_xo <- model.matrix(formula, ordered_stmodel_frame)
+  ordered_xo <- model.matrix(object = formula, data = ordered_stmodel_frame)
 
   # creating the response column
-  ordered_yo <- model.response(ordered_stmodel_frame)
+  ordered_yo <- model.response(data = ordered_stmodel_frame)
 
   # find the linear model residuals
   lmod_r <- as.vector((ordered_yo - ordered_xo %*%
@@ -40,12 +54,12 @@ make_data_object <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
     max_v <- 4 * lmod_s2
   }
   # provide default value for the maximum possible spatial range
-  if (is.null(max_srange)){
-    max_srange <- 4 * max(spint$h_s)
+  if (is.null(max_s_range)){
+    max_s_range <- 4 * max(spint$h_s_small)
   }
   # provide default value for the maximum possible temporal range
-  if (is.null(max_trange)){
-    max_trange <- 4 * max(spint$h_t)
+  if (is.null(max_t_range)){
+    max_t_range <- 4 * max(spint$h_t_small)
   }
 
   # setting initial values if there are none specified
@@ -53,8 +67,8 @@ make_data_object <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
     initial <- make_covparam_object(s_de = 1, s_ie = 1, t_de = 1,
                                     t_ie = 1, st_de = 1, st_ie = 1,
                                     v_s = 0.5, v_t = 0.5,
-                                    s_range = max_srange / 8, # 8 chosen so that it is half the max observed distance
-                                    t_range = max_trange / 8, # 8 chosen so that it is half the max observed distance
+                                    s_range = max_s_range / 8, # 8 chosen so that it is half the max observed distance
+                                    t_range = max_t_range / 8, # 8 chosen so that it is half the max observed distance
                                     estmethod = estmethod, stcov = stcov)
     vparm_names <- c("s_de", "s_ie", "t_de", "t_ie",
                      "st_de", "st_ie")
@@ -62,7 +76,8 @@ make_data_object <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
     initial[names(initial) %in% vparm_names] <- lmod_s2 / numparams
   }
 
-  initial_plo <- r2plo(covparam_object = initial, max_v = max_v, max_srange = max_srange, max_trange = max_trange)
+  initial_plo <- r2plo(covparam_object = initial, max_v = max_v,
+                       max_s_range = max_s_range, max_t_range = max_t_range)
 
   # make the semivariogram
   if (estmethod == "svwls"){
@@ -71,19 +86,21 @@ make_data_object <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
   } else {
     sv <- NULL
   }
-  data_object <- structure(list(formula = formula, data = data, xo = xo, yo = yo,
+  data_object <- structure(list(formula = formula, original_data = original_data,
+                                original_xo = original_xo, original_yo = original_yo,
                                 xyc_o = cbind(xo, yo), stcov = stcov, estmethod = estmethod,
                                 chol = chol, logdet = logdet, diag_tol = diag_tol,
                                 ordered_data_dense = spint$ordered_data_dense,
                                 ordered_data_o = spint$ordered_data_o,
-                                h_s = spint$h_s, h_t = spint$h_t, o_index = spint$o_index,
+                                h_s_small = spint$h_s_small, h_t_small = spint$h_t_small, n_s = spint$n_s,
+                                n_t = spint$n_t, o_index = spint$o_index,
                                 m_index = spint$m_index,
                                 sp_cor = sp_cor, t_cor = t_cor,
-                                f_s = spint$f_s, f_t = spint$f_t, key_s = spint$key_s, key_t = spint$key_t,
+                                h_s_large = spint$h_s_large, h_t_large = spint$h_t_large, key_s = spint$key_s, key_t = spint$key_t,
                                 ordered_xo = ordered_xo, ordered_yo = ordered_yo,
                                 ordered_xyc_o = cbind(ordered_xo, ordered_yo),
-                                lmod_s2 = lmod_s2, max_v = max_v, max_srange = max_srange,
-                                max_trange = max_trange, initial = initial,
+                                lmod_s2 = lmod_s2, max_v = max_v, max_s_range = max_s_range,
+                                max_t_range = max_t_range, initial = initial,
                                 initial_plo = initial_plo, sv = sv, weights = weights),
                            class = c(estmethod, stcov))
   return(data_object)

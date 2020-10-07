@@ -1,11 +1,11 @@
 st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
                      sp_dist = "euclidean", t_dist = "euclidean", r_diff = "euclidean", ...){
-  h_spatial <- h_make(coord1 = xcoord, coord2 = ycoord, distmetric = sp_dist)
+  h_spatial <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = sp_dist)
   h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
-  h_temporal <- h_make(coord1 = tcoord, distmetric = t_dist)
+  h_temporal <- make_h(coord1 = tcoord, distmetric = t_dist)
   h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
-  sqdif_response <- h_make(response, distmetric = r_diff)^2
+  sqdif_response <- make_h(response, distmetric = r_diff)^2
   sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
 
   if (is.null(sp_max)) {
@@ -67,11 +67,11 @@ compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
 # s_index = rep(1:35, times = 30)
 # t = rep(1:30, each = 35)
 # response = rnorm(35 * 30)
-# h_spatial <- h_make(x)
-# h_temporal <- h_make(t)
+# h_spatial <- make_h(x)
+# h_temporal <- make_h(t)
 # sqdif_response <- outer(response, response, sqr_dif)
-# s_cutoff = max(h_make(x))/2
-# t_cutoff = max(h_make(t))/2
+# s_cutoff = max(make_h(x))/2
+# t_cutoff = max(make_h(t))/2
 #
 #
 # #creating a data frame of the observed coordinates / indices / response and arranging

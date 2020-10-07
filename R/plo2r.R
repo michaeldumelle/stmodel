@@ -24,8 +24,8 @@ plo2r.svwls.productsum <- function(par, data_object){
   ov_var <- data_object$max_v * invlogit[["var_prop"]]
   rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
                       t_ie = t_ie, st_de = st_de, st_ie = st_ie),
-             s_range = data_object$max_srange * invlogit[["srange_prop"]],
-             t_range = data_object$max_trange * invlogit[["trange_prop"]])
+             s_range = data_object$max_s_range * invlogit[["srange_prop"]],
+             t_range = data_object$max_t_range * invlogit[["trange_prop"]])
   return(rparm)
 }
 
@@ -47,8 +47,8 @@ plo2r.svwls.sum_with_error <- function(par, data_object){
   ov_var <- data_object$max_v * invlogit[["var_prop"]]
   rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
                         t_ie = t_ie, st_ie = st_ie),
-             s_range = data_object$max_srange * invlogit[["srange_prop"]],
-             t_range = data_object$max_trange * invlogit[["trange_prop"]])
+             s_range = data_object$max_s_range * invlogit[["srange_prop"]],
+             t_range = data_object$max_t_range * invlogit[["trange_prop"]])
   return(rparm)
 }
 
@@ -58,8 +58,8 @@ plo2r.svwls.product <- function(par, data_object){
   v_t <- invlogit[["v_t"]]
   ov_var <- data_object$max_v * invlogit[["var_prop"]]
   rparm <- c(v_s = v_s, v_t = v_t, st_de = ov_var,
-             s_range = data_object$max_srange * invlogit[["srange_prop"]],
-             t_range = data_object$max_trange * invlogit[["trange_prop"]])
+             s_range = data_object$max_s_range * invlogit[["srange_prop"]],
+             t_range = data_object$max_t_range * invlogit[["trange_prop"]])
   return(rparm)
 }
 

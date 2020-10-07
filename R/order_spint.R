@@ -1,29 +1,28 @@
 order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
-  # make the ordered data frame - do this using single brackets
 
-
-  # first make the initial index
-  raw_data <- data
 
   # making the temporal ordering
-  ut <- unique(data[, tcoord, drop = FALSE])
-  ut <- ut[order(ut[[tcoord]]), , drop = FALSE]
-  h_t <- h_make(ut[[tcoord]], ...)
-  n_t <- nrow(ut)
-  ut$tindex <- seq.int(1, n_t)
+  ## saving the unique temporal coordinates
+  key_t <- unique(data[, tcoord, drop = FALSE])
+  ## putting them in order
+  key_t <- key_t[order(key_t[[tcoord]]), , drop = FALSE]
+  ## making the key distance matrix
+  h_t_small <- make_h(key_t[[tcoord]], ...)
+  n_t <- nrow(key_t)
+  key_t$tindex <- seq.int(1, n_t)
 
-  us <- unique(data[, c(xcoord, ycoord), drop = FALSE])
+  key_s <- unique(data[, c(xcoord, ycoord), drop = FALSE])
   if (is.null(ycoord)) {
-    us <- us[order(us[[xcoord]]), , drop = FALSE]
-    h_s <- h_make(us[[xcoord]], ...)
+    key_s <- key_s[order(key_s[[xcoord]]), , drop = FALSE]
+    h_s_small <- make_h(key_s[[xcoord]], ...)
   } else {
-    us <- us[order(us[[ycoord]], us[[xcoord]]), , drop = FALSE]
-    h_s <- h_make(us[[xcoord]], us[[ycoord]], ...)
+    key_s <- key_s[order(key_s[[ycoord]], key_s[[xcoord]]), , drop = FALSE]
+    h_s_small <- make_h(key_s[[xcoord]], key_s[[ycoord]], ...)
   }
-  n_s <- nrow(us)
-  us$sindex <- seq.int(1, n_s)
-  data <- merge(merge(data, us), ut)
-  full_grid <- expand.grid(sindex = us$sindex, tindex = ut$tindex)
+  n_s <- nrow(key_s)
+  key_s$sindex <- seq.int(1, n_s)
+  data <- merge(merge(data, key_s), key_t)
+  full_grid <- expand.grid(sindex = key_s$sindex, tindex = key_t$tindex)
   full_grid$index <- seq.int(1, n_t * n_s)
   data <- merge(full_grid, data, all = TRUE)
   data <- data[order(data$index), , drop = FALSE]
@@ -39,40 +38,14 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
 
   # setting the cholesky distances matrices or NULL
   if (chol) {
-    f_s <- h_make(ordered_data_o[[xcoord]], ordered_data_o[[ycoord]], ...)
-    f_t <- h_make(ordered_data_o[[tcoord]], ...)
+    h_s_large <- make_h(ordered_data_o[[xcoord]], ordered_data_o[[ycoord]], ...)
+    h_t_large <- make_h(ordered_data_o[[tcoord]], ...)
   } else {
-    f_s <- NULL
-    f_t <- NULL
+    h_s_large <- NULL
+    h_t_large <- NULL
   }
-  #raw_data is saved because the data merging mixes up the indices
+  #raw_data is saved becakey_se the data merging mixes up the indices
   return(list(ordered_data_dense = data, ordered_data_o = ordered_data_o,
-              h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
-              f_s = f_s, f_t = f_t, key_s = us, key_t = ut))
+              h_s_small = h_s_small, h_t_small = h_t_small, n_s = n_s, n_t = n_t, o_index = o_index, m_index = m_index,
+              h_s_large = h_s_large, h_t_large = h_t_large, key_s = key_s, key_t = key_t))
 }
-
-
-# order_spint_svwls <- function(data, xcoord, ycoord = NULL, tcoord){
-#
-#   # making the temporal ordering
-#   ut <- unique(data[, tcoord, drop = FALSE])
-#   ut <- ut[order(ut[[tcoord]]), , drop = FALSE]
-#   n_t <- nrow(ut)
-#   ut$tindex <- seq.int(1, n_t)
-#
-#   us <- unique(data[, c(xcoord, ycoord), drop = FALSE])
-#   if (is.null(ycoord)) {
-#     us <- us[order(us[[xcoord]]), , drop = FALSE]
-#   } else {
-#     us <- us[order(us[[ycoord]], us[[xcoord]]), , drop = FALSE]
-#   }
-#   n_s <- nrow(us)
-#   us$sindex <- seq.int(1, n_s)
-#   data <- merge(merge(data, us), ut)
-#   full_grid <- expand.grid(sindex = us$sindex, tindex = ut$tindex)
-#   full_grid$index <- seq.int(1, n_t * n_s)
-#   data <- merge(full_grid, data, all = TRUE)
-#   data <- data[order(data$index), , drop = FALSE]
-#   data$observed <- !(is.na(data[[tcoord]]) & is.na(data[[xcoord]]))
-#   return(list(data = data))
-# }

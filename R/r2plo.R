@@ -6,7 +6,7 @@ r2plo.svwls <- function(covparam_object, ...) {
   UseMethod("r2plo.svwls", object = covparam_object)
 }
 
-r2plo.svwls.productsum <- function(covparam_object, max_v, max_srange, max_trange){
+r2plo.svwls.productsum <- function(covparam_object, max_v, max_s_range, max_t_range){
   params <- covparam_object
   s_vc <- c(params[["s_de"]], params[["s_ie"]])
   svar <- sum(s_vc)
@@ -22,14 +22,14 @@ r2plo.svwls.productsum <- function(covparam_object, max_v, max_srange, max_trang
   n_st <- params[["st_ie"]] / stvar
   pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t, n_st = n_st)
   pparm <- c(pparm, var_prop = pmin(1, (svar + tvar + stvar) / max_v),
-             srange_prop = params[["s_range"]] / max_srange,
-             trange_prop = params[["t_range"]] / max_trange)
+             srange_prop = params[["s_range"]] / max_s_range,
+             trange_prop = params[["t_range"]] / max_t_range)
   pparm <- log(pparm / (1 - pparm))
   return(pparm)
 }
 
 
-r2plo.svwls.sum_with_error <- function(covparam_object, max_v, max_srange, max_trange){
+r2plo.svwls.sum_with_error <- function(covparam_object, max_v, max_s_range, max_t_range){
   params <- covparam_object
   s_vc <- c(params[["s_de"]], params[["s_ie"]])
   svar <- sum(s_vc)
@@ -44,18 +44,18 @@ r2plo.svwls.sum_with_error <- function(covparam_object, max_v, max_srange, max_t
   n_t <- params[["t_ie"]] / tvar
   pparm <- c(lambda = lambda, alpha = alpha, n_s = n_s, n_t = n_t)
   pparm <- c(pparm, var_prop = pmin(1, (svar + tvar + stvar) / max_v),
-             srange_prop = params[["s_range"]] / max_srange,
-             trange_prop = params[["t_range"]] / max_trange)
+             srange_prop = params[["s_range"]] / max_s_range,
+             trange_prop = params[["t_range"]] / max_t_range)
   pparm <- log(pparm / (1 - pparm))
   return(pparm)
 }
 
-r2plo.svwls.product <- function(covparam_object, max_v, max_srange, max_trange){
+r2plo.svwls.product <- function(covparam_object, max_v, max_s_range, max_t_range){
   params <- covparam_object
   pparm <- c(v_s = params[["v_s"]], v_t = params[["v_t"]])
   pparm <- c(pparm, var_prop = pmin(1, params[["st_de"]] / max_v),
-             srange_prop = params[["s_range"]] / max_srange,
-             trange_prop = params[["t_range"]] / max_trange)
+             srange_prop = params[["s_range"]] / max_s_range,
+             trange_prop = params[["t_range"]] / max_t_range)
   pparm <- log(pparm / (1 - pparm))
   return(pparm)
 }
