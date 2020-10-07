@@ -1,6 +1,10 @@
 order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
   # make the ordered data frame - do this using single brackets
 
+
+  # first make the initial index
+  raw_data <- data
+
   # making the temporal ordering
   ut <- unique(data[, tcoord, drop = FALSE])
   ut <- ut[order(ut[[tcoord]]), , drop = FALSE]
@@ -41,7 +45,8 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
     f_s <- NULL
     f_t <- NULL
   }
-  return(list(data = data, data_o = data_o, h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
+  #raw_data is saved because the data merging mixes up the indices
+  return(list(data = raw_data, data_o = data_o, h_s = h_s, h_t = h_t, o_index = o_index, m_index = m_index,
               f_s = f_s, f_t = f_t, us = us, ut = ut))
 }
 

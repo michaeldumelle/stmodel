@@ -1,7 +1,35 @@
-stlm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
+#' Fit a spatio-temporal linear mixed model
+#'
+#' @param formula
+#' @param xcoord
+#' @param ycoord
+#' @param tcoord
+#' @param stcov
+#' @param data
+#' @param estmethod
+#' @param sp_cor
+#' @param t_cor
+#' @param weights
+#' @param initial
+#' @param chol
+#' @param diag_tol
+#' @param max_v
+#' @param max_srange
+#' @param max_trange
+#' @param ...
+#'
+#' @return
+#' @export
+#'
+#' @examples
+stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                  estmethod = c("reml", "svwls"), sp_cor, t_cor, weights, initial = NULL, chol,
                  diag_tol = 1e-4, max_v = NULL, max_srange = NULL, max_trange = NULL, ...){
+
+  # to display the possible estimation methods
   estmethod <- match.arg(estmethod)
+
+  # running the appropriate stlm function
   output <- switch(estmethod,
          "svwls" = stlm_svwls(formula = formula, xcoord = xcoord, ycoord = ycoord,
                               tcoord = tcoord, stcov = stcov, data = data,
@@ -9,14 +37,31 @@ stlm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                               initial = initial, chol = chol, diag_tol = diag_tol,
                               max_v = max_v, max_srange = max_srange, max_trange = max_trange,
                               ...),
-         stop("choose valid estimation method"))
-  class(output) <- "stlm"
+         stop("choose valid estimation method")) # error if they don't choose the proper one
+  # storing the class of the output for use in generics
+  class(output) <- "stlmm"
+
+  # computing the residuals
+  output$Residuals <- residuals(output, ...)
+
+  # finally returning the overall output
   return(output)
 }
 
-stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
+stlmm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
                        sp_cor, t_cor, weights, initial, chol,
                        diag_tol, max_v, max_srange, max_trange, ...){
+
+  # store initial data frame objects
+  # create the model frame using the provided formula
+  data_stmodel_frame <- model.frame(formula, data,
+                               na.action = stats::na.omit)
+
+  # creating the fixed design matrix
+  data_xo <- model.matrix(formula, data_stmodel_frame)
+
+  # creating the response column
+  data_yo <- model.response(stmodel_frame)
 
   # order the data by space within time
   spint <- order_spint(data = data, xcoord = xcoord,
@@ -40,10 +85,6 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   # find the sample variance
   lmod_s2 <- sum(lmod_r^2) / (nrow(xo) - ncol(xo))
 
-  # make the semivariogram
-  sv <- st_empsv(response = lmod_r, xcoord = spint$data_o[[xcoord]], ycoord = spint$data_o[[ycoord]],
-                   tcoord = spint$data_o[[tcoord]], ...)
-
   # provide default value for the maximum possible variance
   if (is.null(max_v)){
     max_v <- 4 * lmod_s2
@@ -57,7 +98,9 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
     max_trange <- 4 * max(spint$h_t)
   }
 
-
+  # make the semivariogram
+  sv <- st_empsv(response = lmod_r, xcoord = spint$data_o[[xcoord]], ycoord = spint$data_o[[ycoord]],
+                 tcoord = spint$data_o[[tcoord]], ...)
   # setting initial values if there are none specified
   if (is.null(initial)){
     initial <- make_covparam_object(s_de = 1, s_ie = 1, t_de = 1,
@@ -65,7 +108,7 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
                                     v_s = 0.5, v_t = 0.5,
                                     s_range = max_srange / 8, # 8 chosen so that it is half the max observed distance
                                     t_range = max_trange / 8, # 8 chosen so that it is half the max observed distance
-                                    stcov = stcov)
+                                    estmethod = estmethod, stcov = stcov)
     vparm_names <- c("s_de", "s_ie", "t_de", "t_ie",
     "st_de", "st_ie")
     numparams <- sum(vparm_names %in% names(initial))
@@ -73,7 +116,7 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   }
 
   # making the covariance parameter estimation object with the appropriate class
-  covest_object <- make_covest_object(object_type = "covest", stcov = stcov,
+  covest_object <- make_covest_object(object_type = "covest",
                                initial = initial, max_srange = max_srange,
                                max_trange = max_trange, max_v = max_v,
                                sp_cor = sp_cor, sv = sv, t_cor = t_cor, weights = weights)
@@ -81,12 +124,21 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
   # but does give us the abilit to easily set maxes on the overall variance and ranges)
 
   # estimate the profiled covariance parameters
-  covest_output <- covest_sv_optim(par = covest_object$initial_plo, fn = sv_fn,
-                         covest_object = covest_object, ...)
+  if (missing(method)) method <- "Nelder-Mead"
+  if (missing(reltol)) reltol <- 1e-8
+  if (missing(maxit)) maxit <- 5000
+
+  covest_output <- optim(par = covest_object$initial_plo, fn = sv_fn,
+                         covest_object = covest_object, method = method,
+                         control = control, ...)
+  # covest_output <- covest_sv_optim(par = covest_object$initial_plo, fn = sv_fn,
+  #                        covest_object = covest_object, ...)
 
   # need to write a wrapper to give optim defaults
   if (covest_output$convergence != 0) {
-    warning("covariance parameter convergence may not have been achieved")
+    warning("covariance parameter convergence may not have been achieved - consider
+            setting new initial values, lowering the relative tolerance, or increasing
+            the maximum iterations")
   }
   covest_output$par_r <- plo2r_sv(par = covest_output$par, covest_object = covest_object)
 
@@ -115,8 +167,13 @@ stlm_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, data,
                             diag_tol = diag_tol)
 
   # return the relevant output
-  return(list(covparams = covest_output$par_r, betahat = betaest_output$betahat,
-              cov_betahat = betaest_output$cov_betahat, objective = covest_output$value))
+  Coefficients <-  betaest_output$betahat
+  names(Coefficients) <- colnames(xo)
+  return(list(CovarianceParameters = covest_output$par_r, Coefficients = betaest_output$betahat,
+              NamesCoefficients = colnames(raw_xo), CovCoefficients = betaest_output$cov_betahat,
+              ObjectiveFn = covest_output$value,
+              CovarianceForms = c(st_cov = stcov, sp_cor = sp_cor, t_cor = t_cor),
+              formula = formula, model = list(FixedDesignMatrix = raw_xo, Response = raw_yo)))
 }
 
 

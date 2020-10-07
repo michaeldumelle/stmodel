@@ -2,7 +2,8 @@ make_covparam_object <- function(s_de, s_ie, t_de,
                                  t_ie, st_de, st_ie,
                                  v_s, v_t, s_range,
                                  t_range,
-                                 stcov){
+                                 estmethod, stcov){
+  if (estmethod %in% c("reml", "svwls")){
   covparam_object <- switch(stcov,
                             "productsum" = covparam_object_productsum(s_de = s_de, s_ie = s_ie,
                                                                       t_de = t_de, t_ie = t_ie,
@@ -12,8 +13,12 @@ make_covparam_object <- function(s_de, s_ie, t_de,
                                                                               t_ie = t_ie, st_ie = st_ie,
                                                                               s_range = s_range, t_range = t_range),
                             "product" = covparam_object_product(st_de = st_de, v_s = v_s, v_t = v_t,
-                                                                s_range = s_range, t_range = t_range))
-  covparam_object <- structure(covparam_object, class = stcov)
+                                                                s_range = s_range, t_range = t_range),
+                            stop("Use a valid error structure"))
+  covparam_object <- structure(covparam_object, class = c(estmethod, stcov))
+  } else {
+    covparam_object <- structure(list(), class = c(estmethod))
+  }
   return(covparam_object)
 }
 
@@ -38,7 +43,6 @@ covparam_object_product <- function(st_de, v_s, v_t,
   return(c(st_de = st_de, v_s = v_s, v_t = v_t,
            s_range = s_range, t_range = t_range))
 }
-
 
 
 
