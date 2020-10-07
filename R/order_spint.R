@@ -39,8 +39,8 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
 
   # setting the cholesky distances matrices or NULL
   if (chol) {
-    f_s <- h_make(ordered_data[[xcoord]], ordered_data[[ycoord]], ...)
-    f_t <- h_make(ordered_data[[tcoord]], ...)
+    f_s <- h_make(ordered_data_o[[xcoord]], ordered_data_o[[ycoord]], ...)
+    f_t <- h_make(ordered_data_o[[tcoord]], ...)
   } else {
     f_s <- NULL
     f_t <- NULL
