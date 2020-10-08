@@ -24,7 +24,8 @@
 #' @examples
 stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                   estmethod, sp_cor, t_cor, chol, diag_tol = 1e-4,
-                  logdet = FALSE, optim_defaults,
+                  logdet = FALSE, optim_options = NULL,
+                  h_options = NULL,
                   weights = NULL, initial = NULL,
                   max_v = NULL, max_s_range = NULL,
                   max_t_range = NULL, ...){
@@ -35,11 +36,11 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                                   estmethod = estmethod, sp_cor = sp_cor, t_cor = t_cor,
                                   weights = weights, initial = initial, chol = chol,
                                   diag_tol = diag_tol, max_v = max_v, max_s_range = max_s_range,
-                                  max_t_range = max_t_range, ...)
+                                  max_t_range = max_t_range, h_options = h_options, ...)
 
 
   # estimate the profiled covariance parameters
-  covest_output <- covest_wrapper(data_object = data_object, optim_defaults = optim_defaults, ...)
+  covest_output <- covest_wrapper(data_object = data_object, optim_options = optim_options, ...)
 
 
   # invert object

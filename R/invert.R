@@ -92,8 +92,8 @@ invert.productsum <- function(invert_object, ...) {
 
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(de = t_de, r_mx = r_t_small, ie = t_ie))
-    c_s <- chol(sigma_make(de = s_de, r_mx = r_s_small, ie = s_ie))
+    c_t <- chol(make_sigma(de = t_de, r_mx = r_t_small, ie = t_ie))
+    c_s <- chol(make_sigma(de = s_de, r_mx = r_s_small, ie = s_ie))
 
     ist_zt <- w_vinvroot %*% multiply_z(t_w_vinvroot, "temporal", n_s, n_t, "right")
               # st x st %*% (st x st * st x t) = st x t
@@ -233,8 +233,8 @@ invert.sum_with_error <- function(invert_object) {
     st_ie <- st_ie + diag_tol
 
     # storing the output we will need for the iterative smw
-    c_t <- chol(sigma_make(de = t_de, r_mx = r_t_small, ie = t_ie))
-    c_s <- chol(sigma_make(de = s_de, r_mx = r_s_small, ie = s_ie))
+    c_t <- chol(make_sigma(de = t_de, r_mx = r_t_small, ie = t_ie))
+    c_s <- chol(make_sigma(de = s_de, r_mx = r_s_small, ie = s_ie))
 
     c_mt <- chol(chol2inv(c_t) + multiply_z(z_type = "temporal", n_s = n_s, n_t = n_t, side = "pz_z")/st_ie)
     ic_mt <- chol2inv(c_mt)
@@ -295,8 +295,8 @@ invert.product <- function(invert_object) {
     diag_tol <- invert_object$diag_tol
     logdet <- invert_object$logdet
 
-    scale_r_s_large <- sigma_make(r_mx = r_s_large, v_ie = v_s, e = 1, scale = TRUE)
-    scale_r_t_large <- sigma_make(r_mx = r_t_large, v_ie = v_s, e = 1, scale = TRUE)
+    scale_r_s_large <- make_sigma(r_mx = r_s_large, v_ie = v_s, e = 1, scale = TRUE)
+    scale_r_t_large <- make_sigma(r_mx = r_t_large, v_ie = v_s, e = 1, scale = TRUE)
 
     cov_st <- st_de * scale_r_s_large * scale_r_t_large
     sigma <- cov_st
@@ -333,9 +333,9 @@ invert.product <- function(invert_object) {
     r_t_small <- r_t_small / (1 + diag_tol)
     diag(r_t_small) <- 1
 
-    scale_r_s_small <- sigma_make(r_mx = r_s_small, v_ie = v_s, e = 1, scale = TRUE)
+    scale_r_s_small <- make_sigma(r_mx = r_s_small, v_ie = v_s, e = 1, scale = TRUE)
     c_scale_r_s_small  <- chol(scale_r_s_small)
-    scale_r_t_small <- sigma_make(r_mx = r_t_small, v_ie = v_t, e = 1, scale = TRUE)
+    scale_r_t_small <- make_sigma(r_mx = r_t_small, v_ie = v_t, e = 1, scale = TRUE)
     c_scale_r_t_small  <- chol(scale_r_t_small)
 
     siginv <- kronecker(chol2inv(c_scale_r_t_small), chol2inv(c_scale_r_s_small)) / st_de

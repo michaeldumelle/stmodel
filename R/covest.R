@@ -16,9 +16,9 @@ r_t <- make_r(h = data_object$sv$avg_tsp, range = plo2r[["t_range"]], structure 
 r_st <- r_s * r_t
 
 # make covariance matrices
-sigma_s <- sigma_make(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
-sigma_t <- sigma_make(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
-sigma_st <- sigma_make(de = plo2r[["st_de"]], r_mx = r_st, ie = plo2r[["st_ie"]])
+sigma_s <- make_sigma(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
+sigma_t <- make_sigma(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
+sigma_st <- make_sigma(de = plo2r[["st_de"]], r_mx = r_st, ie = plo2r[["st_ie"]])
 sigma <- sigma_s + sigma_t + sigma_st
 
 # make C(0, 0)
@@ -50,9 +50,9 @@ covest.svwls.sum_with_error <- function(par, data_object, ...){
   r_st <- r_s * r_t
 
   # make covariance matrices
-  sigma_s <- sigma_make(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
-  sigma_t <- sigma_make(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
-  sigma_st <- sigma_make(0, r_mx = r_st, ie = plo2r[["st_ie"]])
+  sigma_s <- make_sigma(de = plo2r[["s_de"]], r_mx = r_s, ie = plo2r[["s_ie"]])
+  sigma_t <- make_sigma(de = plo2r[["t_de"]], r_mx = r_t, ie = plo2r[["t_ie"]])
+  sigma_st <- make_sigma(0, r_mx = r_st, ie = plo2r[["st_ie"]])
   sigma <- sigma_s + sigma_t + sigma_st
 
   # make C(0, 0)
@@ -88,7 +88,7 @@ covest.svwls.product <- function(par, data_object, ...){
   r_st <- r_s * r_t
 
   # make covariance matrices
-  sigma_st <- sigma_make(de = plo2r[["st_de"]], r_mx = r_st, ie = 0)
+  sigma_st <- make_sigma(de = plo2r[["st_de"]], r_mx = r_st, ie = 0)
   sigma <- sigma_st
 
   # make C(0, 0)

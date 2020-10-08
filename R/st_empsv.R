@@ -1,11 +1,12 @@
 st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
-                     sp_dist = "euclidean", t_dist = "euclidean", r_diff = "euclidean", ...){
-  h_spatial <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = sp_dist)
+                     h_options){
+
+  h_spatial <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = h_options$h_s_distmetric)
   h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
-  h_temporal <- make_h(coord1 = tcoord, distmetric = t_dist)
+  h_temporal <- make_h(coord1 = tcoord, distmetric = h_options$h_t_distmetric)
   h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
-  sqdif_response <- make_h(response, distmetric = r_diff)^2
+  sqdif_response <- make_h(coord1 = response, distmetric = "euclidean")^2
   sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
 
   if (is.null(sp_max)) {

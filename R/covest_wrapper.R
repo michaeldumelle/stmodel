@@ -1,13 +1,17 @@
-covest_wrapper <- function(data_object, optim_defaults, ...){
+covest_wrapper <- function(data_object, optim_options, ...){
   UseMethod("covest_wrapper", object = data_object)
 }
 
-covest_wrapper.svwls <- function(data_object, optim_defaults, ...){
+covest_wrapper.svwls <- function(data_object, optim_options, ...){
+
+  if (is.null(optim_options)){
+    optim_options <- list(method = "Nelder-Mead", control = list(reltol = 1e-8, maxit = 10000))
+  }
 
   covest_output <- optim(par = data_object$initial_plo, fn = covest.svwls,
                          data_object = data_object,
-                         method = optim_defaults$method,
-                         control = optim_defaults$control,
+                         method = optim_options$method,
+                         control = optim_options$control,
                          ...)
   covest_output$par_r <- plo2r.svwls(par = covest_output$par, data_object = data_object)
 

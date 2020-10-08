@@ -1,4 +1,4 @@
-order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
+order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, h_options){
 
 
   # making the temporal ordering
@@ -7,17 +7,20 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
   ## putting them in order
   key_t <- key_t[order(key_t[[tcoord]]), , drop = FALSE]
   ## making the key distance matrix
-  h_t_small <- make_h(key_t[[tcoord]], ...)
+  h_t_small <- make_h(coord1 = key_t[[tcoord]], distmetric = h_options$h_t_distmetric)
+  ## number of unique temporal locations
   n_t <- nrow(key_t)
+  ## index for unique temporal locations
   key_t$tindex <- seq.int(1, n_t)
 
+  ## making the
   key_s <- unique(data[, c(xcoord, ycoord), drop = FALSE])
   if (is.null(ycoord)) {
     key_s <- key_s[order(key_s[[xcoord]]), , drop = FALSE]
-    h_s_small <- make_h(key_s[[xcoord]], ...)
+    h_s_small <- make_h(coord1 = key_s[[xcoord]], dismetric = h_options$h_s_distmetric)
   } else {
     key_s <- key_s[order(key_s[[ycoord]], key_s[[xcoord]]), , drop = FALSE]
-    h_s_small <- make_h(key_s[[xcoord]], key_s[[ycoord]], ...)
+    h_s_small <- make_h(coord1 = key_s[[xcoord]], coord2 = key_s[[ycoord]], distmetric = h_options$h_s_distmetric)
   }
   n_s <- nrow(key_s)
   key_s$sindex <- seq.int(1, n_s)
@@ -38,8 +41,13 @@ order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, ...){
 
   # setting the cholesky distances matrices or NULL
   if (chol) {
-    h_s_large <- make_h(ordered_data_o[[xcoord]], ordered_data_o[[ycoord]], ...)
-    h_t_large <- make_h(ordered_data_o[[tcoord]], ...)
+    if (is.null(ycoord)){
+      h_s_large <- make_h(coord1 = ordered_data_o[[xcoord]], distmetric = h_options$h_s_distmetric)
+      h_t_large <- make_h(coord1 = ordered_data_o[[tcoord]], distmetric = h_options$h_t_distmetric)
+    } else{
+      h_s_large <- make_h(coord1 = ordered_data_o[[xcoord]], coord2 = ordered_data_o[[ycoord]], distmetric = h_options$h_s_distmetric)
+      h_t_large <- make_h(coord1 = ordered_data_o[[tcoord]], distmetric = h_options$h_t_distmetric)
+    }
   } else {
     h_s_large <- NULL
     h_t_large <- NULL
