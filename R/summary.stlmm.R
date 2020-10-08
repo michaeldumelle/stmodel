@@ -32,12 +32,11 @@ summary.stlmm <- function(stlmm_object, ...) {
 
   objective <- stlmm_object$ObjectiveFn
 
-  output <- list(Call = call,
+  output <- structure(list(Call = call,
                 FixedEffects = fixed.effect.estimates,
                 CovarianceParameters = covmodelout,
                 CovarianceForms = covinfoout,
-                Residuals = resid_vec, ObjectiveFn = objective)
+                Residuals = resid_vec, ObjectiveFn = objective), class = "summary.stlmm")
 
-  class(output) <- "summary.slmfit"
   return(output)
 }

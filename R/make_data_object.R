@@ -13,7 +13,7 @@ make_data_object <- function(formula, xcoord, ycoord, tcoord, stcov, estmethod, 
 make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estmethod, data,
                              sp_cor, t_cor, chol, initial,
                              max_v, max_s_range,
-                             max_t_range, weights, h_options, ...){
+                             max_t_range, weights, h_options, logdet, diag_tol, ...){
 
 
   if (is.null(h_options)){
@@ -90,7 +90,7 @@ make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estme
 
   data_object <- structure(list(formula = formula, original_data = original_data,
                                 original_xo = original_xo, original_yo = original_yo,
-                                xyc_o = cbind(xo, yo), stcov = stcov, estmethod = estmethod,
+                                original_xyc_o = cbind(original_xo, original_yo), stcov = stcov, estmethod = estmethod,
                                 chol = chol, logdet = logdet, diag_tol = diag_tol,
                                 ordered_data_dense = spint$ordered_data_dense,
                                 ordered_data_o = spint$ordered_data_o,
@@ -190,7 +190,7 @@ make_data_object_reml <- function(formula, xcoord, ycoord, tcoord, stcov, estmet
 
   data_object <- structure(list(formula = formula, original_data = original_data,
                                 original_xo = original_xo, original_yo = original_yo,
-                                xyc_o = cbind(xo, yo), stcov = stcov, estmethod = estmethod,
+                                original_xyc_o = cbind(original_xo, original_yo), stcov = stcov, estmethod = estmethod,
                                 chol = chol, logdet = logdet, diag_tol = diag_tol,
                                 ordered_data_dense = spint$ordered_data_dense,
                                 ordered_data_o = spint$ordered_data_o,

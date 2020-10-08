@@ -36,7 +36,7 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                                   estmethod = estmethod, sp_cor = sp_cor, t_cor = t_cor,
                                   weights = weights, initial = initial, chol = chol,
                                   diag_tol = diag_tol, max_v = max_v, max_s_range = max_s_range,
-                                  max_t_range = max_t_range, h_options = h_options, ...)
+                                  max_t_range = max_t_range, h_options = h_options, logdet = logdet, ...)
 
 
   # estimate the profiled covariance parameters
@@ -68,12 +68,13 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
 
   # return the relevant output
   Coefficients <-  betaest_output$betahat
-  names(Coefficients) <- colnames(xo)
+  names(Coefficients) <- colnames(data_object$original_xo)
   stlmm_object <- structure(list(CovarianceParameters = covest_output$par_r, Coefficients = betaest_output$betahat,
-              NamesCoefficients = colnames(raw_xo), CovCoefficients = betaest_output$cov_betahat,
+              NamesCoefficients = names(Coefficients), CovCoefficients = betaest_output$cov_betahat,
               ObjectiveFn = covest_output$value,
               CovarianceForms = c(st_cov = stcov, sp_cor = sp_cor, t_cor = t_cor),
-              formula = formula, model = list(FixedDesignMatrix = raw_xo, Response = raw_yo)),
+              formula = formula,
+              model = list(FixedDesignMatrix = data_object$original_xo, Response = data_object$original_yo)),
               class = "stlmm")
 
   # computing the residuals

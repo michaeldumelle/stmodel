@@ -1,4 +1,4 @@
-print.summary.slmm <- function(x,
+print.summary.stlmm <- function(x,
                                  digits = max(3L, getOption("digits") - 3L),
                                  signif.stars = getOption("show.signif.stars"), ...) {
 
@@ -31,6 +31,11 @@ print.summary.slmm <- function(x,
 
 }
 
-print.slmm <- function(x,...) {
+
+
+
+
+
+print.stlmm <- function(x,...) {
   print(summary(x,...))
 }

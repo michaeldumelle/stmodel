@@ -30,7 +30,7 @@ theo_sv <- sum(vparams) - sigma
 
 # create the weights
 wts <- switch(data_object$weights,
-              "cressie" = weight_cressie(sv = data_object$sv, theo_sv = theo_sv),
+              "cressie" = weights_cressie(sv = data_object$sv, theo_sv = theo_sv),
               stop("choose valid weights"))
 
 # create the objective function
@@ -64,7 +64,7 @@ covest.svwls.sum_with_error <- function(par, data_object, ...){
 
   # create the weights
   wts <- switch(data_object$weights,
-                "cressie" = weight_cressie(sv = data_object$sv, theo_sv = theo_sv),
+                "cressie" = weights_cressie(sv = data_object$sv, theo_sv = theo_sv),
                 stop("choose valid weights"))
 
   # create the objective function
