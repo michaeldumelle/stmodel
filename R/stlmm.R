@@ -30,7 +30,7 @@ stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                   max_v = NULL, max_s_range = NULL,
                   max_t_range = NULL, ...){
 
-  # NOTES MAKE THIS A GENERIC AT SOME POINT - stlmm.data.frame, stlmm.tibble, stlmm.sf, stlmm.sp, etc.
+  # NOTES: MAKE THIS A GENERIC AT SOME POINT - stlmm.data.frame, stlmm.tibble, stlmm.sf, stlmm.sp, etc.
 
   #can do the switch call here for the data object
   data_object <- make_data_object(formula = formula, xcoord = xcoord, ycoord = ycoord,
