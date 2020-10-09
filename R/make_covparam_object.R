@@ -2,9 +2,8 @@ make_covparam_object <- function(s_de, s_ie, t_de,
                                  t_ie, st_de, st_ie,
                                  v_s, v_t, s_range,
                                  t_range,
-                                 estmethod, stcov){
-  # setting up flexible framework for other estimation methods
-  if (estmethod %in% c("reml", "svwls")){
+                                 estmethod = NULL, stcov){
+
     # conditional call for type of spatio-temporal covariance
     covparam_object <- switch(stcov,
                               "productsum" = covparam_object_productsum(s_de = s_de, s_ie = s_ie,
@@ -19,10 +18,6 @@ make_covparam_object <- function(s_de, s_ie, t_de,
                               stop("Use a valid error structure"))
     # giving the object the appropriate estimation method class
     covparam_object <- structure(covparam_object, class = c(estmethod, stcov))
-  } else {
-    # giving the object the appropriate estimation method class
-    covparam_object <- structure(list(), class = c(estmethod))
-  }
   return(covparam_object)
 }
 

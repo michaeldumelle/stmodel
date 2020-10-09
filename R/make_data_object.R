@@ -22,14 +22,14 @@ make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estme
 
   original_data <- data
   # making the original model frame
-  original_stmodel_frame <- model.frame(formula = formula, data = original_data,
+  original_stmodel_frame <- model.frame(formula, original_data,
                                     na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  original_xo <- model.matrix(object = formula, data = original_stmodel_frame)
+  original_xo <- model.matrix(formula, original_stmodel_frame)
 
   # creating the response column
-  original_yo <- model.response(data = original_stmodel_frame)
+  original_yo <- model.response(original_stmodel_frame)
 
   # order the data by space within time
   spint <- order_spint(data = original_data, xcoord = xcoord,
@@ -38,14 +38,14 @@ make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estme
 
 
   # create the model frame using the provided formula
-  ordered_stmodel_frame <- model.frame(formula = formula, data = spint$ordered_data_o,
+  ordered_stmodel_frame <- model.frame(formula, spint$ordered_data_o,
                                na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  ordered_xo <- model.matrix(object = formula, data = ordered_stmodel_frame)
+  ordered_xo <- model.matrix(formula, ordered_stmodel_frame)
 
   # creating the response column
-  ordered_yo <- model.response(data = ordered_stmodel_frame)
+  ordered_yo <- model.response(ordered_stmodel_frame)
 
   # find the linear model residuals
   lmod_r <- as.vector((ordered_yo - ordered_xo %*%
@@ -127,10 +127,10 @@ make_data_object_reml <- function(formula, xcoord, ycoord, tcoord, stcov, estmet
                                         na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  original_xo <- model.matrix(object = formula, data = original_stmodel_frame)
+  original_xo <- model.matrix(formula, original_stmodel_frame)
 
   # creating the response column
-  original_yo <- model.response(data = original_stmodel_frame)
+  original_yo <- model.response(original_stmodel_frame)
 
   # order the data by space within time
   spint <- order_spint(data = original_data, xcoord = xcoord,
@@ -139,14 +139,14 @@ make_data_object_reml <- function(formula, xcoord, ycoord, tcoord, stcov, estmet
 
 
   # create the model frame using the provided formula
-  ordered_stmodel_frame <- model.frame(formula = formula, data = spint$ordered_data_o,
+  ordered_stmodel_frame <- model.frame(formula, spint$ordered_data_o,
                                        na.action = stats::na.omit)
 
   # creating the fixed design matrix
-  ordered_xo <- model.matrix(object = formula, data = ordered_stmodel_frame)
+  ordered_xo <- model.matrix(formula, ordered_stmodel_frame)
 
   # creating the response column
-  ordered_yo <- model.response(data = ordered_stmodel_frame)
+  ordered_yo <- model.response(ordered_stmodel_frame)
 
   # find the linear model residuals
   lmod_r <- as.vector((ordered_yo - ordered_xo %*%
