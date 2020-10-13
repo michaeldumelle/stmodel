@@ -14,6 +14,9 @@ multiply_z <- function(mx, z_type, n_s, n_t, side = c("right", "left", "p_right"
 }
 
 multiply_z_r <- function(mx, z_type, n_s, n_t) {
+  if (is.vector(mx)){
+    mx <- matrix(mx, ncol = 1)
+  }
   n_st <- n_s * n_t
   n_row <- nrow(mx)
   if (z_type == "spatial"){
@@ -29,6 +32,9 @@ multiply_z_r <- function(mx, z_type, n_s, n_t) {
 }
 
 multiply_zp_l <- function(mx, z_type, n_s, n_t){
+  if (is.vector(mx)){
+    mx <- matrix(mx, ncol = 1)
+  }
   n_st <- n_s * n_t
   n_col <- ncol(mx)
   if (z_type == "spatial"){
@@ -41,6 +47,9 @@ multiply_zp_l <- function(mx, z_type, n_s, n_t){
 }
 
 multiply_z_l <- function(mx, z_type, n_s, n_t){
+  if (is.vector(mx)){
+    mx <- matrix(mx, ncol = 1)
+  }
   n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(mx[rep(seq(1, n_t), times = n_s), , drop = FALSE])
@@ -52,6 +61,9 @@ multiply_z_l <- function(mx, z_type, n_s, n_t){
 }
 
 multiply_zp_r <- function(mx, z_type, n_s, n_t){
+  if (is.vector(mx)){
+    mx <- matrix(mx, ncol = 1)
+  }
   n_st <- n_s * n_t
   if (z_type == "spatial"){
     return(mx[ , rep(seq(1, n_t), times = n_s), drop = FALSE])

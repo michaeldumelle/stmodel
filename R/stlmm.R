@@ -22,7 +22,10 @@
 #' @export
 #'
 #' @examples
-stlmm <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
+stlmm <- function(data, ...){
+  UseMethod("stlmm", object = data)
+}
+stlmm.data.frame <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data,
                   estmethod, sp_cor, t_cor, chol, diag_tol = 1e-4,
                   logdet = FALSE, optim_options = NULL,
                   h_options = NULL,

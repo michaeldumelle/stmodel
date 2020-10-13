@@ -1,4 +1,4 @@
-order_spint <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, h_options){
+storder <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, h_options){
 
 
   # making the temporal ordering

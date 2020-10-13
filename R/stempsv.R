@@ -1,4 +1,4 @@
-st_empsv <- function(response, xcoord, ycoord = NULL, tcoord,
+stempsv <- function(response, xcoord, ycoord = NULL, tcoord,
                      n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
                      h_options){
 

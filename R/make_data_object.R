@@ -32,7 +32,7 @@ make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estme
   original_yo <- model.response(original_stmodel_frame)
 
   # order the data by space within time
-  spint <- order_spint(data = original_data, xcoord = xcoord,
+  spint <- storder(data = original_data, xcoord = xcoord,
                        ycoord = ycoord, tcoord = tcoord, chol = chol, h_options = h_options)
 
 
@@ -85,7 +85,7 @@ make_data_object_svwls <- function(formula, xcoord, ycoord, tcoord, stcov, estme
                        max_s_range = max_s_range, max_t_range = max_t_range)
 
 
-  sv <- st_empsv(response = lmod_r, xcoord = spint$ordered_data_o[[xcoord]], ycoord = spint$ordered_data_o[[ycoord]],
+  sv <- stempsv(response = lmod_r, xcoord = spint$ordered_data_o[[xcoord]], ycoord = spint$ordered_data_o[[ycoord]],
                  tcoord = spint$ordered_data_o[[tcoord]], h_options = h_options)
 
   data_object <- structure(list(formula = formula, original_data = original_data,
@@ -133,7 +133,7 @@ make_data_object_reml <- function(formula, xcoord, ycoord, tcoord, stcov, estmet
   original_yo <- model.response(original_stmodel_frame)
 
   # order the data by space within time
-  spint <- order_spint(data = original_data, xcoord = xcoord,
+  spint <- storder(data = original_data, xcoord = xcoord,
                        ycoord = ycoord, tcoord = tcoord, chol = chol, h_options = h_options)
 
 
