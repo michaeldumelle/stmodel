@@ -84,6 +84,48 @@ strnorm_small.productsum <- function(covparam_object, mu, size, r_s_small, r_t_s
   return(strnorm_small_sim)
 }
 
+strnorm_small.sum_with_error <- function(covparam_object, mu, size, r_s_small, r_t_small){
+  chol_r_s_small <- t(chol(r_s_small))
+  chol_r_t_small <- t(chol(r_t_small))
+
+  n_s <- nrow(chol_r_s_small)
+  n_t <- nrow(chol_r_t_small)
+  n_st <- n_s * n_t
+
+  zs_chol_r_s_small <- multiply_z(mx = chol_r_s_small, z_type = "spatial", n_s = n_s,
+                                  n_t = n_t, side = "left")
+  zs_chol_r_t_small <- multiply_z(mx = chol_r_t_small, z_type = "temporal",
+                                  n_s = n_s, n_t = n_t, side = "left")
+
+
+  strnorm_small_sim <- vapply(1:size, function(x) {
+    return(mu +
+             zs_chol_r_s_small %*% rnorm(n_s, sd = sqrt(covparam_object[["s_de"]])) +
+             multiply_z(mx = rnorm(n_s, sd = sqrt(covparam_object[["s_ie"]])), z_type = "spatial", n_s = n_s, n_t = n_t, side = "left") +
+             zs_chol_r_t_small %*% rnorm(n_t, sd = sqrt(covparam_object[["t_de"]])) +
+             multiply_z(mx = rnorm(n_t, sd = sqrt(covparam_object[["t_ie"]])), z_type = "temporal", n_s = n_s, n_t = n_t, side = "left") +
+             rnorm(n_st, sd = sqrt(covparam_object[["st_ie"]])))
+  }, double(n_st))
+  return(strnorm_small_sim)
+}
+
+
+strnorm_small.product <- function(covparam_object, mu, size, r_s_small, r_t_small){
+  chol_r_s_small <- t(chol(r_s_small))
+  chol_r_t_small <- t(chol(r_t_small))
+
+  n_s <- nrow(chol_r_s_small)
+  n_t <- nrow(chol_r_t_small)
+  n_st <- n_s * n_t
+
+  chol_r_st <- kronecker(chol_r_t_small, chol_r_s_small)
+
+  strnorm_small_sim <- vapply(1:size, function(x) {
+    return(mu +
+             chol_r_st %*% rnorm(n_st, sd = sqrt(covparam_object[["st_de"]])))
+  }, double(n_st))
+  return(strnorm_small_sim)
+}
 
 # strnorm.default <- function(object, mu, size, ...){
 #   UseMethod("strnorm.default", object = object)
