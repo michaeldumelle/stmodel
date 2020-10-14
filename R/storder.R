@@ -1,4 +1,4 @@
-storder <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, h_options){
+storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
 
 
   # making the temporal ordering
@@ -40,7 +40,7 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, chol = FALSE, h_options
   ordered_data_o <- data[o_index, , drop = FALSE]
 
   # setting the cholesky distances matrices or NULL
-  if (chol) {
+  if (h_options$h_large) {
     if (is.null(ycoord)){
       h_s_large <- make_h(coord1 = ordered_data_o[[xcoord]], distmetric = h_options$h_s_distmetric)
       h_t_large <- make_h(coord1 = ordered_data_o[[tcoord]], distmetric = h_options$h_t_distmetric)

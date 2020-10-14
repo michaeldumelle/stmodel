@@ -1,63 +1,141 @@
-stempsv <- function(response, xcoord, ycoord = NULL, tcoord,
-                     n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
-                     h_options){
-
-  h_spatial <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = h_options$h_s_distmetric)
-  h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
-  h_temporal <- make_h(coord1 = tcoord, distmetric = h_options$h_t_distmetric)
-  h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
-  sqdif_response <- make_h(coord1 = response, distmetric = "euclidean")^2
-  sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
-
-  if (is.null(sp_max)) {
-    sp_max <- max(h_spatial) / 2
+stempsv <- function(response, xcoord, ycoord = NULL, tcoord, h_options,
+                    h_response = NULL, h_s_large = NULL, h_t_large = NULL,
+                    stempsv_options = NULL){
+  if (is.null(stempsv_options)){
+    stempsv_options <- list(n_s_lag = 16, n_t_lag = 16, h_s_max = NULL, h_t_max = NULL)
   }
 
-  if (is.null(t_max)) {
-    t_max <- max(h_temporal) / 2
+  if (missing(h_options)){
+    h_options = list(h_t_distmetric = "euclidean",
+                     h_s_distmetric = "euclidean")
   }
 
-  sp_lags_upper <- seq(0, sp_max, length.out = n_sp_lag)
-  sp_lags_lower <- c(-0.1, sp_lags_upper[-n_sp_lag])
-  sp_lags_upper <- rep(sp_lags_upper, times = n_t_lag)
-  sp_lags_lower <- rep(sp_lags_lower, times = n_t_lag)
-  sp_h_mid <- pmax(0, rowMeans(cbind(sp_lags_lower, sp_lags_upper)))
+  # make this take distance matrices or coordinates
+  ## h_response, h_s_large, h_t_large
+  if (is.null(h_s_large)) {
+    h_s_large <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = h_options$h_s_distmetric)
+  }
+  if (is.null(h_t_large)){
+    h_t_large <- make_h(coord1 = tcoord, distmetric = h_options$h_t_distmetric)
+  }
+  if (is.null(h_response)){
+    h_response <- make_h(coord1 = response, distmetric = "euclidean")^2
+  }
+  h_s_large <- h_s_large[upper.tri(h_s_large, diag = F)]
+  h_t_large <- h_t_large[upper.tri(h_t_large, diag = F)]
+  h_response <- h_response[upper.tri(h_response, diag = F)]
 
-  t_lags_upper <- rep(seq(0, t_max, length.out = n_t_lag))
-  t_lags_lower <- rep(c(-0.1, t_lags_upper[-n_t_lag]))
-  t_lags_upper <- rep(t_lags_upper, each = n_sp_lag)
-  t_lags_lower <- rep(t_lags_lower, each = n_sp_lag)
-  t_h_mid <- pmax(0, rowMeans(cbind(t_lags_lower, t_lags_upper)))
+  if (is.null(stempsv_options$h_s_max)) {
+    stempsv_options$h_s_max <- max(h_s_large) / 2
+  }
 
-  output <- pmap_dfr(list(sp_lag_lower = sp_lags_lower, sp_lag_upper = sp_lags_upper,
+  if (is.null(stempsv_options$h_t_max)) {
+    stempsv_options$h_t_max <- max(h_t_large) / 2
+  }
+
+  s_lags_upper <- seq(0, stempsv_options$h_s_max, length.out = stempsv_options$n_s_lag)
+  s_lags_lower <- c(-0.1, s_lags_upper[-stempsv_options$n_s_lag])
+  s_lags_upper <- rep(s_lags_upper, times = stempsv_options$n_t_lag)
+  s_lags_lower <- rep(s_lags_lower, times = stempsv_options$n_t_lag)
+  h_s_mid <- pmax(0, rowMeans(cbind(s_lags_lower, s_lags_upper)))
+
+  t_lags_upper <- rep(seq(0, stempsv_options$h_t_max, length.out = stempsv_options$n_t_lag))
+  t_lags_lower <- rep(c(-0.1, t_lags_upper[-stempsv_options$n_t_lag]))
+  t_lags_upper <- rep(t_lags_upper, each = stempsv_options$n_s_lag)
+  t_lags_lower <- rep(t_lags_lower, each = stempsv_options$n_s_lag)
+  h_t_mid <- pmax(0, rowMeans(cbind(t_lags_lower, t_lags_upper)))
+
+  output <- pmap_dfr(list(s_lag_lower = s_lags_lower, s_lag_upper = s_lags_upper,
                           t_lag_lower = t_lags_lower, t_lag_upper = t_lags_upper,
-                          sp_h = sp_h_mid, t_h = t_h_mid),
-                     .f = compute_sv, h_spatial, h_temporal, sqdif_response)
-  # output$t_lower <- pmax(0, t_lags_lower)
-  # output$t_upper <- t_lags_upper
-  # output$sp_lower <- pmax(0, sp_lags_lower)
-  # output$sp_upper <- sp_lags_upper
+                          h_s_mid = h_s_mid, h_t_mid = h_t_mid),
+                     .f = compute_stempsv, h_s_large, h_t_large, h_response)
   return_output <- output[output[["n"]] > 0, ]
 
   if (nrow(return_output) > 0) {
     return(return_output)
   } else {
-    stop("No semivariogram bins meet distance requirements: Choose larger values for sp_max and t_max")
+    stop("No semivariogram bins meet distance requirements: Choose larger values for h_s_max and h_t_max")
   }
 }
 
-compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
-                       sp_h, t_h, h_spatial, h_temporal, sqdif_response){
-  hsp <- (h_spatial > sp_lag_lower) & (h_spatial <= sp_lag_upper)
-  avg_hsp <- mean(h_spatial[hsp])
-  tsp <- (h_temporal > t_lag_lower) & (h_temporal <= t_lag_upper)
-  avg_tsp <- mean(h_temporal[tsp])
-  sqdifs <- sqdif_response[hsp & tsp]
+compute_stempsv <- function(s_lag_lower, s_lag_upper, t_lag_lower, t_lag_upper,
+                       h_s_mid, h_t_mid, h_s_large, h_t_large, h_response){
+  h_s <- (h_s_large > s_lag_lower) & (h_s_large <= s_lag_upper)
+  h_s_avg <- mean(h_s_large[h_s])
+  h_t <- (h_t_large > t_lag_lower) & (h_t_large <= t_lag_upper)
+  h_t_avg <- mean(h_t_large[h_t])
+  sqrdifs <- h_response[h_s & h_t]
   # could multiply by 2 here to match the pairs but doesnt matter for optimization
-  n_sqdifs <- length(sqdifs)
-  mean_sqdifs <- mean(sqdifs)/2
-  return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, avg_hsp = avg_hsp, t_h = t_h, avg_tsp = avg_tsp))
+  n_gammahat <- length(sqrdifs)
+  gammahat <- mean(sqrdifs)/2
+  return(data.frame(n = n_gammahat, gammahat = gammahat, h_s_mid = h_s_mid,
+                    h_s_avg = h_s_avg, h_t_mid = h_t_mid, h_t_avg = h_t_avg))
 }
+
+
+
+
+# stempsv <- function(response, xcoord, ycoord = NULL, tcoord,
+#                      n_sp_lag = 16, n_t_lag = 16, sp_max = NULL, t_max = NULL,
+#                      h_options){
+#   # make this take distance matrices or coordinates
+#   ## h_response, h_s_large, h_t_large
+#   h_spatial <- make_h(coord1 = xcoord, coord2 = ycoord, distmetric = h_options$h_s_distmetric)
+#   h_spatial <- h_spatial[upper.tri(h_spatial, diag = F)]
+#   h_temporal <- make_h(coord1 = tcoord, distmetric = h_options$h_t_distmetric)
+#   h_temporal <- h_temporal[upper.tri(h_temporal, diag = F)]
+#   sqdif_response <- make_h(coord1 = response, distmetric = "euclidean")^2
+#   sqdif_response <- sqdif_response[upper.tri(sqdif_response, diag = F)]
+#
+#   if (is.null(sp_max)) {
+#     sp_max <- max(h_spatial) / 2
+#   }
+#
+#   if (is.null(t_max)) {
+#     t_max <- max(h_temporal) / 2
+#   }
+#
+#   sp_lags_upper <- seq(0, sp_max, length.out = n_sp_lag)
+#   sp_lags_lower <- c(-0.1, sp_lags_upper[-n_sp_lag])
+#   sp_lags_upper <- rep(sp_lags_upper, times = n_t_lag)
+#   sp_lags_lower <- rep(sp_lags_lower, times = n_t_lag)
+#   sp_h_mid <- pmax(0, rowMeans(cbind(sp_lags_lower, sp_lags_upper)))
+#
+#   t_lags_upper <- rep(seq(0, t_max, length.out = n_t_lag))
+#   t_lags_lower <- rep(c(-0.1, t_lags_upper[-n_t_lag]))
+#   t_lags_upper <- rep(t_lags_upper, each = n_sp_lag)
+#   t_lags_lower <- rep(t_lags_lower, each = n_sp_lag)
+#   t_h_mid <- pmax(0, rowMeans(cbind(t_lags_lower, t_lags_upper)))
+#
+#   output <- pmap_dfr(list(sp_lag_lower = sp_lags_lower, sp_lag_upper = sp_lags_upper,
+#                           t_lag_lower = t_lags_lower, t_lag_upper = t_lags_upper,
+#                           sp_h = sp_h_mid, t_h = t_h_mid),
+#                      .f = compute_sv, h_spatial, h_temporal, sqdif_response)
+#   # output$t_lower <- pmax(0, t_lags_lower)
+#   # output$t_upper <- t_lags_upper
+#   # output$sp_lower <- pmax(0, sp_lags_lower)
+#   # output$sp_upper <- sp_lags_upper
+#   return_output <- output[output[["n"]] > 0, ]
+#
+#   if (nrow(return_output) > 0) {
+#     return(return_output)
+#   } else {
+#     stop("No semivariogram bins meet distance requirements: Choose larger values for sp_max and t_max")
+#   }
+# }
+#
+# compute_sv <- function(sp_lag_lower, sp_lag_upper, t_lag_lower, t_lag_upper,
+#                        sp_h, t_h, h_spatial, h_temporal, sqdif_response){
+#   hsp <- (h_spatial > sp_lag_lower) & (h_spatial <= sp_lag_upper)
+#   avg_hsp <- mean(h_spatial[hsp])
+#   tsp <- (h_temporal > t_lag_lower) & (h_temporal <= t_lag_upper)
+#   avg_tsp <- mean(h_temporal[tsp])
+#   sqdifs <- sqdif_response[hsp & tsp]
+#   # could multiply by 2 here to match the pairs but doesnt matter for optimization
+#   n_sqdifs <- length(sqdifs)
+#   mean_sqdifs <- mean(sqdifs)/2
+#   return(data.frame(n = n_sqdifs, mean_sqdifs = mean_sqdifs, sp_h = sp_h, avg_hsp = avg_hsp, t_h = t_h, avg_tsp = avg_tsp))
+# }
 
 
 # library(gstat)
