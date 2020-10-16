@@ -52,7 +52,7 @@ covest_wrapper.reml <- function(covest_object, data_object){
 
   invert_object$covparams <- plo2r.reml(covest_output$par, covest_object = covest_object, ov_var = 1)
   invert_output <- invert(invert_object)
-  ov_var <- varest(invert_object = invert_object, invert_output = invert_output)
+  ov_var <- varest.reml(invert_object = invert_object, invert_output = invert_output)
   covest_output$par_r <- plo2r.reml(covest_output$par, covest_object = covest_object, ov_var = ov_var)
   # get overall variance
   #getovvar
