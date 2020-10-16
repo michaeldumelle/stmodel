@@ -1,4 +1,4 @@
-invert <- function(invert_object, ...) {
+invert <- function(invert_object) {
   UseMethod("invert", object = invert_object)
 }
 
@@ -7,15 +7,21 @@ invert <- function(invert_object, ...) {
 # can just store r_s_small and r_t_small elsewhere for now in the invert object
 
 
-invert.productsum <- function(invert_object, ...) {
+invert.productsum <- function(invert_object) {
 
 
 
   if (invert_object$chol) {
 
     # layout the arguments
-    r_s_large <- invert_object$r_s_large
-    r_t_large <- invert_object$r_t_large
+    r_s_large <-  make_r(h = invert_object$h_s_large,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_large <- make_r(h = invert_object$h_t_large,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
+    # r_s_large <- invert_object$r_s_large
+    # r_t_large <- invert_object$r_t_large
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -43,8 +49,14 @@ invert.productsum <- function(invert_object, ...) {
 
 
     # layout the arguments
-    r_s_small <- invert_object$r_s_small
-    r_t_small <- invert_object$r_t_small
+    # r_s_small <- invert_object$r_s_small
+    # r_t_small <- invert_object$r_t_small
+    r_s_small <-  make_r(h = invert_object$h_s_small,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_small <- make_r(h = invert_object$h_t_small,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -163,7 +175,7 @@ invert.productsum <- function(invert_object, ...) {
     }
   }
 
-  output <- list(siginv_o = siginv_o, logdet = logdet)
+  output <- list(sigmainv_o = siginv_o, logdet = logdet)
   output_non_null <- output[!unlist(lapply(output, is.null))]
   return(output_non_null)
 }
@@ -172,9 +184,14 @@ invert.sum_with_error <- function(invert_object) {
 
   if (invert_object$chol) {
 
-    # layout the arguments
-    r_s_large <- invert_object$r_s_large
-    r_t_large <- invert_object$r_t_large
+    r_s_large <-  make_r(h = invert_object$h_s_large,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_large <- make_r(h = invert_object$h_t_large,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
+    # r_s_large <- invert_object$r_s_large
+    # r_t_large <- invert_object$r_t_large
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -200,8 +217,14 @@ invert.sum_with_error <- function(invert_object) {
   } else {
 
     # layout the arguments
-    r_s_small <- invert_object$r_s_small
-    r_t_small <- invert_object$r_t_small
+    # r_s_small <- invert_object$r_s_small
+    # r_t_small <- invert_object$r_t_small
+    r_s_small <-  make_r(h = invert_object$h_s_small,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_small <- make_r(h = invert_object$h_t_small,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
     s_de <- invert_object$covparams[["s_de"]]
     s_ie <- invert_object$covparams[["s_ie"]]
     t_de <- invert_object$covparams[["t_de"]]
@@ -270,7 +293,7 @@ invert.sum_with_error <- function(invert_object) {
     }
   }
 
-  output <- list(siginv_o = siginv_o, logdet = logdet)
+  output <- list(sigmainv_o = siginv_o, logdet = logdet)
   output_non_null <- output[!unlist(lapply(output, is.null))]
   return(output_non_null)
 }
@@ -285,9 +308,14 @@ invert.product <- function(invert_object) {
 
   if (invert_object$chol) {
 
-    # layout the arguments
-    r_s_large <- invert_object$r_s_large
-    r_t_large <- invert_object$r_t_large
+    r_s_large <-  make_r(h = invert_object$h_s_large,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_large <- make_r(h = invert_object$h_t_large,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
+    # r_s_large <- invert_object$r_s_large
+    # r_t_large <- invert_object$r_t_large
     st_de <- invert_object$covparams[["st_de"]]
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
@@ -311,8 +339,14 @@ invert.product <- function(invert_object) {
     }
   } else {
     # layout the arguments
-    r_s_small <- invert_object$r_s_small
-    r_t_small <- invert_object$r_t_small
+    # r_s_small <- invert_object$r_s_small
+    # r_t_small <- invert_object$r_t_small
+    r_s_small <-  make_r(h = invert_object$h_s_small,
+                         range = invert_object$covparams[["s_range"]],
+                         structure = invert_object$sp_cor)
+    r_t_small <- make_r(h = invert_object$h_t_small,
+                        range = invert_object$covparams[["t_range"]],
+                        structure = invert_object$t_cor)
     st_de <- invert_object$covparams[["st_de"]]
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
@@ -359,7 +393,7 @@ invert.product <- function(invert_object) {
       logdet <- NULL
     }
   }
-  output <- list(siginv_o = siginv_o, logdet = logdet)
+  output <- list(sigmainv_o = siginv_o, logdet = logdet)
   output_non_null <- output[!unlist(lapply(output, is.null))]
   return(output_non_null)
 }

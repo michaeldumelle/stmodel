@@ -1,4 +1,4 @@
-plo2r <- function(par, covest_object){
+plo2r <- function(par, covest_object, ...){
   UseMethod("plo2r", object = covest_object)
 }
 
@@ -63,6 +63,64 @@ plo2r.svwls.product <- function(par, covest_object){
   return(rparm)
 }
 
+
+plo2r.reml <- function(par, covest_object, ...){
+  UseMethod("plo2r.reml", object = covest_object)
+}
+
+plo2r.reml.productsum <- function(par, covest_object, ov_var){
+  invlogit <- exp(par) / (1 + exp(par))
+  lambda <- invlogit[["lambda"]]
+  alpha <- invlogit[["alpha"]]
+  n_s <- invlogit[["n_s"]]
+  n_t <- invlogit[["n_t"]]
+  n_st <- invlogit[["n_st"]]
+
+  s_de <- lambda * alpha * (1 - n_s)
+  s_ie <- lambda * alpha * n_s
+  t_de <- lambda * (1 - alpha) * (1 - n_t)
+  t_ie <- lambda * (1 - alpha) * n_t
+  st_de <- (1 - lambda) * (1 - n_st)
+  st_ie <- (1 - lambda) * n_st
+
+  rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
+                        t_ie = t_ie, st_de = st_de, st_ie = st_ie),
+             s_range = covest_object$max_options$max_s_range * invlogit[["srange_prop"]],
+             t_range = covest_object$max_options$max_t_range * invlogit[["trange_prop"]])
+  return(rparm)
+}
+
+
+plo2r.reml.sum_with_error <- function(par, covest_object, ov_var){
+  invlogit <- exp(par) / (1 + exp(par))
+  lambda <- invlogit[["lambda"]]
+  alpha <- invlogit[["alpha"]]
+  n_s <- invlogit[["n_s"]]
+  n_t <- invlogit[["n_t"]]
+
+
+  s_de <- lambda * alpha * (1 - n_s)
+  s_ie <- lambda * alpha * n_s
+  t_de <- lambda * (1 - alpha) * (1 - n_t)
+  t_ie <- lambda * (1 - alpha) * n_t
+  st_ie <- (1 - lambda)
+
+  rparm <- c(ov_var * c(s_de = s_de, s_ie = s_ie, t_de = t_de,
+                        t_ie = t_ie, st_ie = st_ie),
+             s_range = covest_object$max_options$max_s_range * invlogit[["srange_prop"]],
+             t_range = covest_object$max_options$max_t_range * invlogit[["trange_prop"]])
+  return(rparm)
+}
+
+plo2r.reml.product <- function(par, covest_object, ov_var){
+  invlogit <- exp(par) / (1 + exp(par))
+  v_s <- invlogit[["v_s"]]
+  v_t <- invlogit[["v_t"]]
+  rparm <- c(v_s = v_s, v_t = v_t, st_de = ov_var,
+             s_range = covest_object$max_options$max_s_range * invlogit[["srange_prop"]],
+             t_range = covest_object$max_options$max_t_range * invlogit[["trange_prop"]])
+  return(rparm)
+}
 
 # plo2r_productsum <- function(lambda, alpha, n_s, n_t, n_st, ov_var){
 #   s_de <- lambda * alpha * (1 - n_s)

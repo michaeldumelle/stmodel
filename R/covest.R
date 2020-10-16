@@ -1,4 +1,4 @@
-covest <- function(par, covest_object, data_object){
+covest <- function(par, covest_object, ...){
   UseMethod("covest", object = covest_object)
 }
 
@@ -25,6 +25,14 @@ covest.svwls <- function(par, covest_object, data_object){
 weights_cressie <- function(sv, theo_sv) {
   wts <- sv$n / theo_sv^2
   return(wts)
+}
+
+covest.reml <- function(par, covest_object, invert_object){
+  plo2r <- plo2r.reml(par, covest_object, ov_var = 1)
+  invert_object$covparams <- plo2r
+  invert_output <- invert(invert_object)
+  m2ll <- minus2loglik.reml(invert_object = invert_object, invert_output = invert_output)
+  return(m2ll)
 }
 
 

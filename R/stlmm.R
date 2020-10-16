@@ -39,7 +39,7 @@ stlmm.data.frame <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
 
   # make the covest object
   covest_object <- make_covest_object(initial = initial, estmethod = estmethod,
-                                        stcov = stcov, data_object = data_object, chol = chol,
+                                        stcov = stcov, data_object = data_object, diag_tol = diag_tol, chol = chol,
                                         sp_cor = sp_cor, t_cor = t_cor, weights = weights, max_options = max_options,
                                         optim_options = optim_options, stempsv_options = stempsv_options)
 
@@ -48,16 +48,14 @@ stlmm.data.frame <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
 
   # estimate the profiled covariance parameters
   covest_output <- covest_wrapper(covest_object = covest_object, data_object = data_object)
-
+  class(covest_output$par_r) <- class(covest_object)
 
   # invert object
-  invert_object <- make_invert_object(stcov = stcov,
-                                      chol = chol, co = NULL,
-                                      covparams = covest_output$par_r,
+  invert_object <- make_invert_object(covparam_object = covest_output$par_r,
+                                      chol = chol,
                                       diag_tol = diag_tol,
                                       h_s_large = data_object$h_s_large, h_t_large = data_object$h_t_large,
                                       h_s_small = data_object$h_s_small, h_t_small = data_object$h_t_small,
-                                      n_s = data_object$n_s, n_t = data_object$n_t,
                                       logdet = logdet,
                                       m_index = data_object$m_index,
                                       o_index = data_object$o_index,
@@ -65,13 +63,27 @@ stlmm.data.frame <- function(formula, xcoord, ycoord = NULL, tcoord, stcov, data
                                       t_cor = t_cor,
                                       xo = data_object$ordered_xo,
                                       yo = data_object$ordered_yo)
+  # invert_object <- make_invert_object(stcov = stcov,
+  #                                     chol = chol, co = NULL,
+  #                                     covparams = covest_output$par_r,
+  #                                     diag_tol = diag_tol,
+  #                                     h_s_large = data_object$h_s_large, h_t_large = data_object$h_t_large,
+  #                                     h_s_small = data_object$h_s_small, h_t_small = data_object$h_t_small,
+  #                                     n_s = data_object$n_s, n_t = data_object$n_t,
+  #                                     logdet = logdet,
+  #                                     m_index = data_object$m_index,
+  #                                     o_index = data_object$o_index,
+  #                                     sp_cor = sp_cor,
+  #                                     t_cor = t_cor,
+  #                                     xo = data_object$ordered_xo,
+  #                                     yo = data_object$ordered_yo)
   # compute the inverse
-  inverse <- invert(invert_object)
+  invert_output <- invert(invert_object)
 
 
   # estimate the fixed effects
-  betaest_output <- betaest(xo = data_object$ordered_xo, sigmainv_xyo = inverse$siginv_o,
-                            diag_tol = diag_tol)
+  betaest_output <- betaest(xo = data_object$ordered_xo, sigmainv_xyo = invert_output$sigmainv_o,
+                            diag_tol = diag_tol, return_estlist = FALSE)
 
   # return the relevant output
   Coefficients <-  betaest_output$betahat
