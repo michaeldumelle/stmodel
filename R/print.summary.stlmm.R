@@ -19,7 +19,7 @@ print.summary.stlmm <- function(x,
 
   cat("\nCoefficients:\n")
   coefs = x$FixedEffects
-  colnames(coefs) = c("Estimate", "Std. Error", "t value", "Pr(>|t|)")
+  colnames(coefs) = c("Estimate", "Std. Error", "z value", "Pr(>|z|)")
   printCoefmat(coefs, digits = digits, signif.stars = signif.stars,
                na.print = "NA", ...)
 

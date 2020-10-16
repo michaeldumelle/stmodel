@@ -2,11 +2,6 @@ invert <- function(invert_object) {
   UseMethod("invert", object = invert_object)
 }
 
-
-# make cov param vector a list within invert object
-# can just store r_s_small and r_t_small elsewhere for now in the invert object
-
-
 invert.productsum <- function(invert_object) {
 
 

@@ -1,15 +1,3 @@
-## Make correlation matrix (r)
-##
-## @param h distance matrix
-## @param range range (correlation decay) parameter defined in terms of effective range
-## @param structure covariance structure for the correlation matrix
-##
-## @return a correlation matrix
-## @export
-##
-## @examples
-## h <- h_make(1:3)
-## r <- make_r(h, 3, "exponential")
 make_r <- function(h, range, structure = c("exponential", "spherical", "gaussian", "tent")) {
   switch(structure,
          exponential = r_exp(h, range),
