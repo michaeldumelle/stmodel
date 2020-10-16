@@ -1,4 +1,4 @@
-stlmm <- function(data, ...){
+stlmm <- function(formula, data, ...){
   UseMethod("stlmm", object = data)
 }
 
