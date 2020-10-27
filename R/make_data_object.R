@@ -39,6 +39,7 @@ make_data_object <- function(formula, xcoord, ycoord, tcoord, data, h_options){
                                 o_index = spint$o_index, m_index = spint$m_index,
                                 h_s_large = spint$h_s_large, h_t_large = spint$h_t_large,
                                 key_s = spint$key_s, key_t = spint$key_t,
-                                ordered_xo = ordered_xo, ordered_yo = ordered_yo)
+                                ordered_xo = ordered_xo, ordered_yo = ordered_yo,
+                                h_options = h_options)
   return(data_object)
 }

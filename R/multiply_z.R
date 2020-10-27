@@ -52,7 +52,7 @@ multiply_z_l <- function(mx, z_type, n_s, n_t){
   }
   n_st <- n_s * n_t
   if (z_type == "spatial"){
-    return(mx[rep(seq(1, n_t), times = n_s), , drop = FALSE])
+    return(mx[rep(seq(1, n_s), times = n_t), , drop = FALSE])
   } else if (z_type == "temporal"){
     return(mx[rep(seq(1, n_t), each = n_s), , drop = FALSE])
   } else {
@@ -66,7 +66,7 @@ multiply_zp_r <- function(mx, z_type, n_s, n_t){
   }
   n_st <- n_s * n_t
   if (z_type == "spatial"){
-    return(mx[ , rep(seq(1, n_t), times = n_s), drop = FALSE])
+    return(mx[ , rep(seq(1, n_s), times = n_t), drop = FALSE])
   } else if (z_type == "temporal"){
     return(mx[ , rep(seq(1, n_t), each = n_s), drop = FALSE])
   } else {

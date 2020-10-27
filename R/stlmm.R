@@ -1,10 +1,10 @@
-stlmm <- function(formula, data, ...){
+stlmm <- function(data, formula, ...){
   UseMethod("stlmm", object = data)
 }
 
-stlmm.data.frame <- function(formula, data, xcoord, ycoord = NULL, tcoord, stcov,
-                             estmethod, sp_cor, t_cor, chol = FALSE, diag_tol = 1e-4,
-                             logdet = FALSE, weights = NULL, initial = NULL,
+stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov,
+                             estmethod = "reml", sp_cor = "exponential", t_cor = "exponential", chol = FALSE, diag_tol = 1e-4,
+                             logdet = FALSE, weights = "cressie", initial = NULL,
                              optim_options = NULL, h_options = NULL,
                              max_options = NULL, stempsv_options = NULL, ...){
 
@@ -54,7 +54,18 @@ stlmm.data.frame <- function(formula, data, xcoord, ycoord = NULL, tcoord, stcov
                                  ObjectiveFn = covest_output$value,
                                  CovarianceForms = c(stcov = stcov, sp_cor = sp_cor, t_cor = t_cor),
                                  formula = formula,
-                                 model = list(FixedDesignMatrix = data_object$original_xo, Response = data_object$original_yo)),
+                                 model = list(FixedDesignMatrix = data_object$original_xo, Response = data_object$original_yo),
+                                 data_object = data_object, invert_output = invert_output,
+                                 coordnames = list(xcoord = xcoord, ycoord = ycoord, tcoord = tcoord),
+                                 coords = list(xcoord = data_object$ordered_data_o[[xcoord]],
+                                               ycoord = data_object$ordered_data_o[[ycoord]],
+                                               tcoord = data_object$ordered_data_o[[tcoord]]),
+                                 h_options = data_object$h_options,
+                                 stempsv_options = covest_object$stempsv_options,
+                                 optim_options = covest_object$optim_options,
+                                 max_options = covest_object$max_options,
+                                 chol = chol,
+                                 diag_tol = diag_tol),
                             class = "stlmm")
 
   # computing the residuals

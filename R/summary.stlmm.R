@@ -1,13 +1,13 @@
-summary.stlmm <- function(stlmm_object, ...) {
+summary.stlmm <- function(object) {
 
-  call <- stlmm_object$formula
+  call <- object$formula
 
-  NAvec <- rep(NA, times = length(stlmm_object$NamesCoefficients))
+  NAvec <- rep(NA, times = length(object$NamesCoefficients))
 
-  regcoefs <- as.vector(stlmm_object$Coefficients)
-  regvar <- stlmm_object$CovCoefficients
-  p <- ncol(stlmm_object$model$FixedDesignMatrix)
-  n <- nrow(stlmm_object$model$FixedDesignMatrix)
+  regcoefs <- as.vector(object$Coefficients)
+  regvar <- object$CovCoefficients
+  p <- ncol(object$model$FixedDesignMatrix)
+  n <- nrow(object$model$FixedDesignMatrix)
 
   sereg <- sqrt(diag(as.matrix(regvar)))
 
@@ -19,18 +19,18 @@ summary.stlmm <- function(stlmm_object, ...) {
 
   fixed.effect.estimates <- data.frame(Estimate = regcoefs,
     Std.Error = sereg, t.value = tvec, prob.t = pvec)
-  rownames(fixed.effect.estimates) <- stlmm_object$NamesCoefficients
+  rownames(fixed.effect.estimates) <- object$NamesCoefficients
 
-  covmodels <- as.list(stlmm_object$CovarianceParameters)
+  covmodels <- as.list(object$CovarianceParameters)
   covmodelout <- data.frame(covmodels, stringsAsFactors = FALSE)
 
 
-  covinfo <- as.list(stlmm_object$CovarianceForms)
+  covinfo <- as.list(object$CovarianceForms)
   covinfoout <- data.frame(covinfo, stringsAsFactors = FALSE)
 
-  resid_vec <- stlmm_object$Residuals
+  resid_vec <- object$Residuals
 
-  objective <- stlmm_object$ObjectiveFn
+  objective <- object$ObjectiveFn
 
   output <- structure(list(Call = call,
                 FixedEffects = fixed.effect.estimates,

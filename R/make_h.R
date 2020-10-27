@@ -6,8 +6,6 @@ make_h <- function(coord1, coord2 = NULL, distmetric = "euclidean") {
 }
 
 
-
-
 ## helper functions for each distance metric
 ### euclidean
 eucdist <- function(coord1, coord2 = NULL) {
