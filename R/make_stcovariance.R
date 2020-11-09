@@ -39,8 +39,20 @@ make_stcovariance.sum_with_error <- function(covparam_object, h_s_large, h_t_lar
 
 make_stcovariance.product <- function(covparam_object, h_s_large, h_t_large,
                                           s_cor, t_cor){
-r_s <- make_r(h = h_s_large, range = covparam_object[["s_range"]], structure = s_cor)
-r_t <- make_r(h = h_t_large, range = covparam_object[["t_range"]], structure = t_cor)
+r_s <- make_sigma(
+  r_mx = make_r(h = h_s_large, range = covparam_object[["s_range"]], structure = s_cor),
+  v_ie = covparam_object[["v_s"]],
+  e = 1,
+  scale = TRUE
+)
+
+r_t <- make_sigma(
+  r_mx = make_r(h = h_t_large, range = covparam_object[["t_range"]], structure = t_cor),
+  v_ie = covparam_object[["v_t"]],
+  e = 1,
+  scale = TRUE
+)
+
 r_st <- r_s * r_t
 
 # make covariance matrices
