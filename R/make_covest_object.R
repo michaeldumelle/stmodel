@@ -1,5 +1,5 @@
 # make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, data_object,
-#                                weights = NULL, chol = NULL, diag_tol = NULL,
+#                                weights = NULL, chol = NULL, condition = NULL,
 #                                max_options = NULL, optim_options = NULL, stempsv_options = NULL){
 #
 #   if (is.null(optim_options)){
@@ -78,16 +78,16 @@
 #     weights <- weights
 #     chol <- NULL
 #     logdet <- NULL
-#     diag_tol <- NULL
+#     condition <- NULL
 #   } else {
 #     stempsv <- NULL
 #     weights <- NULL
 #     chol <- chol
 #     logdet <- TRUE
-#     diag_tol <- diag_tol
+#     condition <- condition
 #   }
 #
-#   covest_object <- structure(list(chol = chol, diag_tol = diag_tol,
+#   covest_object <- structure(list(chol = chol, condition = condition,
 #                                   initial = initial, initial_plo = initial_plo,
 #                                   logdet = logdet, max_options = max_options,
 #                                   optim_options = optim_options,
@@ -112,7 +112,7 @@
 
 
 make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, data_object,
-                                weights = NULL, chol = NULL, diag_tol = NULL,
+                                weights = NULL, chol = NULL, condition = NULL,
                                 max_options = NULL, optim_options = NULL, stempsv_options = NULL){
 
   if (is.null(optim_options)){
@@ -188,16 +188,16 @@ make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, 
     weights <- weights
     chol <- NULL
     logdet <- NULL
-    diag_tol <- NULL
+    condition <- NULL
   } else {
     stempsv <- NULL
     weights <- NULL
     chol <- chol
     logdet <- TRUE
-    diag_tol <- diag_tol
+    condition <- condition
   }
 
-  covest_object <- structure(list(chol = chol, diag_tol = diag_tol,
+  covest_object <- structure(list(chol = chol, condition = condition,
                                    initial = initial, initial_plo = initial_plo,
                                    logdet = logdet, max_options = max_options,
                                    optim_options = optim_options,

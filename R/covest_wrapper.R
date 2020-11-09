@@ -31,7 +31,7 @@ covest_wrapper.reml <- function(covest_object, data_object){
   class(covest_object$initial_plo) <- class(covest_object)
   invert_object <- make_invert_object(covparam_object = covest_object$initial_plo,
                                       chol = covest_object$chol, co = NULL,
-                                      diag_tol = covest_object$diag_tol,
+                                      condition = covest_object$condition,
                                       h_s_large = data_object$h_s_large,
                                       h_t_large = data_object$h_t_large,
                                       h_s_small = data_object$h_s_small,

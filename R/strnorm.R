@@ -1,8 +1,8 @@
-strnorm <- function(object, mu, size, diag_tol, ...){
+strnorm <- function(object, mu, size, condition, ...){
   UseMethod("strnorm", object = object)
 }
 
-strnorm.matrix <- function(object, mu, size, diag_tol = 1e-4){
+strnorm.matrix <- function(object, mu, size, condition = 1e-4){
   n_st <- nrow(object)
   if (length(mu) != 1 & length(mu) != n_st) stop("choose mu as a vector having size nst or a single scalar")
   chol_siginv <- t(chol(object))
@@ -11,7 +11,7 @@ strnorm.matrix <- function(object, mu, size, diag_tol = 1e-4){
 
 
 strnorm.default <- function(object, mu, size, xcoord, ycoord = NULL, tcoord, data,
-                            sp_cor, t_cor, chol = FALSE, diag_tol = 1e-4, h_options = NULL){
+                            sp_cor, t_cor, chol = FALSE, condition = 1e-4, h_options = NULL){
   if (is.null(h_options)){
     h_options = list(h_large = TRUE, h_t_distmetric = "euclidean", h_s_distmetric = "euclidean")
   }
@@ -29,18 +29,18 @@ strnorm.default <- function(object, mu, size, xcoord, ycoord = NULL, tcoord, dat
     st_covariance <- make_stcovariance(covparam_object = object, h_s_large = h_s_large,
                                                   h_t_large = h_t_large, sp_cor = sp_cor,
                                                   t_cor = t_cor)
-    strnorm_sim <- strnorm.matrix(object = st_covariance, mu = mu, size = size, diag_tol = diag_tol)
+    strnorm_sim <- strnorm.matrix(object = st_covariance, mu = mu, size = size, condition = condition)
   } else {
     covparam_object <- object
     data$original_key <- seq.int(1, nrow(data))
     spint <- storder(data = data, xcoord = xcoord, ycoord = ycoord, tcoord = tcoord,
                      h_options = h_options)
     r_s_small <- make_r(h = spint$h_s_small, range = covparam_object[["s_range"]], structure = sp_cor)
-    diag(r_s_small) <- diag(r_s_small) + diag_tol
+    diag(r_s_small) <- diag(r_s_small) + condition
 
 
     r_t_small <- make_r(h = spint$h_t_small, range = covparam_object[["t_range"]], structure = t_cor)
-    diag(r_t_small) <- diag(r_t_small) + diag_tol
+    diag(r_t_small) <- diag(r_t_small) + condition
 
 
 

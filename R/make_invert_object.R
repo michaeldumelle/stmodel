@@ -1,6 +1,6 @@
 make_invert_object <- function(covparam_object,
                                chol, co = NULL,
-                               diag_tol,
+                               condition,
                                h_s_large = NULL, h_t_large = NULL,
                                h_s_small = NULL, h_t_small = NULL,
                                logdet, m_index = NULL,
@@ -18,7 +18,7 @@ make_invert_object <- function(covparam_object,
     n_s <- nrow(h_s_small)
     n_t <- nrow(h_t_small)
     invert_object <- structure(list(covparams = covparam_object, chol = chol,
-                                    diag_tol = diag_tol, logdet = logdet,
+                                    condition = condition, logdet = logdet,
                                     h_s_small = h_s_small, h_t_small = h_t_small,
                                     h_s_large = h_s_large, h_t_large = h_t_large,
                                     o_index = o_index, m_index = m_index,

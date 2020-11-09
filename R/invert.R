@@ -24,14 +24,14 @@ invert.productsum <- function(invert_object) {
     st_de <- invert_object$covparams[["st_de"]]
     st_ie <- invert_object$covparams[["st_ie"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
 
     cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
     cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
     cov_st <- st_de * r_t_large * r_s_large + st_ie * (r_s_large == 1) * (r_t_large == 1)
     sigma <- cov_s + cov_t + cov_st
-    diag(sigma) <- diag(sigma) + diag_tol
+    diag(sigma) <- diag(sigma) + condition
     chol_sigma <- chol(sigma)
     siginv <- chol2inv(chol_sigma)
     siginv_o <- siginv %*% xyc_o
@@ -59,7 +59,7 @@ invert.productsum <- function(invert_object) {
     st_de <- invert_object$covparams[["st_de"]]
     st_ie <- invert_object$covparams[["st_ie"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
     o_index <- invert_object$o_index
     m_index <- invert_object$m_index
@@ -74,13 +74,13 @@ invert.productsum <- function(invert_object) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    r_s_small <- r_s_small / (1 + diag_tol)
+    r_s_small <- r_s_small / (1 + condition)
     diag(r_s_small) <- 1
-    r_t_small <- r_t_small / (1 + diag_tol)
+    r_t_small <- r_t_small / (1 + condition)
     diag(r_t_small) <- 1
-    s_ie <- s_ie + diag_tol
-    t_ie <- t_ie + diag_tol
-    st_ie <- st_ie + diag_tol
+    s_ie <- s_ie + condition
+    t_ie <- t_ie + condition
+    st_ie <- st_ie + condition
 
     ## finding eigendecompositions
     r_s_small_eigen <- eigen(r_s_small)
@@ -193,14 +193,14 @@ invert.sum_with_error <- function(invert_object) {
     t_ie <- invert_object$covparams[["t_ie"]]
     st_ie <- invert_object$covparams[["st_ie"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
 
     cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
     cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
     cov_st <- st_ie * (r_s_large == 1) * (r_t_large == 1)
     sigma <- cov_s + cov_t + cov_st
-    diag(sigma) <- diag(sigma) + diag_tol
+    diag(sigma) <- diag(sigma) + condition
     chol_sigma <- chol(sigma)
     siginv <- chol2inv(chol_sigma)
     siginv_o <- siginv %*% xyc_o
@@ -226,7 +226,7 @@ invert.sum_with_error <- function(invert_object) {
     t_ie <- invert_object$covparams[["t_ie"]]
     st_ie <- invert_object$covparams[["st_ie"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
     o_index <- invert_object$o_index
     m_index <- invert_object$m_index
@@ -242,13 +242,13 @@ invert.sum_with_error <- function(invert_object) {
 
     ## adding diagonal tolerances for invertibility stability - for the correlation matrices, they are
     ## also rescaled so the diagonal is 1
-    r_s_small <- r_s_small / (1 + diag_tol)
+    r_s_small <- r_s_small / (1 + condition)
     diag(r_s_small) <- 1
-    r_t_small <- r_t_small / (1 + diag_tol)
+    r_t_small <- r_t_small / (1 + condition)
     diag(r_t_small) <- 1
-    s_ie <- s_ie + diag_tol
-    t_ie <- t_ie + diag_tol
-    st_ie <- st_ie + diag_tol
+    s_ie <- s_ie + condition
+    t_ie <- t_ie + condition
+    st_ie <- st_ie + condition
 
     # storing the output we will need for the iterative smw
     c_t <- chol(make_sigma(de = t_de, r_mx = r_t_small, ie = t_ie))
@@ -315,7 +315,7 @@ invert.product <- function(invert_object) {
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
 
     scale_r_s_large <- make_sigma(r_mx = r_s_large, v_ie = v_s, e = 1, scale = TRUE)
@@ -323,7 +323,7 @@ invert.product <- function(invert_object) {
 
     cov_st <- st_de * scale_r_s_large * scale_r_t_large
     sigma <- cov_st
-    diag(sigma) <- diag(sigma) + diag_tol
+    diag(sigma) <- diag(sigma) + condition
     chol_sigma <- chol(sigma)
     siginv <- chol2inv(chol_sigma)
     siginv_o <- siginv %*% xyc_o
@@ -346,7 +346,7 @@ invert.product <- function(invert_object) {
     v_s <- invert_object$covparams[["v_s"]]
     v_t <- invert_object$covparams[["v_t"]]
     xyc_o <- invert_object$xyc_o
-    diag_tol <- invert_object$diag_tol
+    condition <- invert_object$condition
     logdet <- invert_object$logdet
     o_index <- invert_object$o_index
     m_index <- invert_object$m_index
@@ -357,9 +357,9 @@ invert.product <- function(invert_object) {
 
     dense <- length(o_index) == n_st
 
-    r_s_small <- r_s_small / (1 + diag_tol)
+    r_s_small <- r_s_small / (1 + condition)
     diag(r_s_small) <- 1
-    r_t_small <- r_t_small / (1 + diag_tol)
+    r_t_small <- r_t_small / (1 + condition)
     diag(r_t_small) <- 1
 
     scale_r_s_small <- make_sigma(r_mx = r_s_small, v_ie = v_s, e = 1, scale = TRUE)

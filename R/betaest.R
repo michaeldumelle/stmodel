@@ -1,10 +1,10 @@
-betaest <- function(xo, sigmainv_xyo, diag_tol, return_estlist = FALSE){
+betaest <- function(xo, sigmainv_xyo, condition, return_estlist = FALSE){
   ncol_xo <- ncol(xo)
   xo_dims <- seq.int(1, ncol_xo)
   sigmainv_xo <- sigmainv_xyo[, xo_dims, drop = FALSE]
   sigmainv_yo <- sigmainv_xyo[, ncol_xo + 1, drop = FALSE]
   invcov_betahat <- t(xo) %*% sigmainv_xo
-  diag(invcov_betahat) <- diag(invcov_betahat) + diag_tol
+  diag(invcov_betahat) <- diag(invcov_betahat) + condition
   chol_invcov_betahat <- chol(invcov_betahat)
   cov_betahat <- chol2inv(chol_invcov_betahat)
   betahat <- cov_betahat %*% t(xo) %*% sigmainv_yo

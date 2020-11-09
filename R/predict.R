@@ -130,7 +130,7 @@ predict.stlmm_prediction <- function(object,
   # make the object to invert and multiply by covariance on the right
   invert_object <- make_invert_object(covparam_object = object$CovarianceParameters,
                                       chol = object$chol,
-                                      diag_tol = object$diag_tol,
+                                      condition = object$condition,
                                       co = t(newdata_data_stcovariance),
                                       h_s_small = object$data_object$h_s_small,
                                       h_t_small = object$data_object$h_t_small,

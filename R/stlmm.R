@@ -3,7 +3,7 @@ stlmm <- function(data, formula, ...){
 }
 
 stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov,
-                             estmethod = "reml", sp_cor = "exponential", t_cor = "exponential", chol = FALSE, diag_tol = 1e-4,
+                             estmethod = "reml", sp_cor = "exponential", t_cor = "exponential", chol = FALSE, condition = 1e-4,
                              logdet = FALSE, weights = "cressie", initial = NULL,
                              optim_options = NULL, h_options = NULL,
                              max_options = NULL, stempsv_options = NULL, ...){
@@ -14,7 +14,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
 
   # make the covest object
   covest_object <- make_covest_object(initial = initial, estmethod = estmethod,
-                                        stcov = stcov, data_object = data_object, diag_tol = diag_tol, chol = chol,
+                                        stcov = stcov, data_object = data_object, condition = condition, chol = chol,
                                         sp_cor = sp_cor, t_cor = t_cor, weights = weights, max_options = max_options,
                                         optim_options = optim_options, stempsv_options = stempsv_options)
 
@@ -28,7 +28,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
   # invert object
   invert_object <- make_invert_object(covparam_object = covest_output$par_r,
                                       chol = chol,
-                                      diag_tol = diag_tol,
+                                      condition = condition,
                                       h_s_large = data_object$h_s_large, h_t_large = data_object$h_t_large,
                                       h_s_small = data_object$h_s_small, h_t_small = data_object$h_t_small,
                                       logdet = logdet,
@@ -44,7 +44,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
 
   # estimate the fixed effects
   betaest_output <- betaest(xo = data_object$ordered_xo, sigmainv_xyo = invert_output$sigmainv_o,
-                            diag_tol = diag_tol, return_estlist = FALSE)
+                            condition = condition, return_estlist = FALSE)
 
   # return the relevant output
   Coefficients <-  betaest_output$betahat
@@ -65,7 +65,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
                                  optim_options = covest_object$optim_options,
                                  max_options = covest_object$max_options,
                                  chol = chol,
-                                 diag_tol = diag_tol),
+                                 condition = condition),
                             class = "stlmm")
 
   # computing the residuals
