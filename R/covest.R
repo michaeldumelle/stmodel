@@ -1,15 +1,22 @@
 covest <- function(par, covest_object, ...){
+  # call the appropriate covariance parameter estimation generic
   UseMethod("covest", object = covest_object)
 }
 
 covest.svwls <- function(par, covest_object, data_object){
-  # multiply overall var by exponentiated
-  # transform profiled to regular
+
+  # transform profiled variance parameters to regular
   plo2r <- plo2r.svwls(par, covest_object)
+
+  # copy the class of covest_object to us theh appropriate generic
   class(plo2r) <- class(covest_object)
-  theo_sv <- make_stsemivariogram(covparam_object = plo2r, h_s_large = covest_object$stempsv$h_s_avg,
-                        h_t_large = covest_object$stempsv$h_t_avg, sp_cor = covest_object$sp_cor,
-                        t_cor = covest_object$t_cor)
+  theo_sv <- make_stsemivariogram(
+    covparam_object = plo2r,
+    h_s_large = covest_object$stempsv$h_s_avg,
+    h_t_large = covest_object$stempsv$h_t_avg,
+    s_cor = covest_object$s_cor,
+    t_cor = covest_object$t_cor
+  )
   # create the weights
   wts <- switch(covest_object$weights,
                 "cressie" = weights_cressie(sv = covest_object$stempsv, theo_sv = theo_sv),

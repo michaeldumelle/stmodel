@@ -39,7 +39,7 @@ covest_wrapper.reml <- function(covest_object, data_object){
                                       logdet = covest_object$logdet,
                                       m_index = data_object$m_index,
                                       o_index = data_object$o_index,
-                                      sp_cor = covest_object$sp_cor,
+                                      s_cor = covest_object$s_cor,
                                       t_cor = covest_object$t_cor,
                                       xo = data_object$ordered_xo,
                                       yo = data_object$ordered_yo)

@@ -123,7 +123,7 @@ predict.stlmm_prediction <- function(object,
   newdata_data_stcovariance <- make_stcovariance(covparam_object = object$CovarianceParameters,
                                                  h_s_large = newdata_data_h_s_large,
                                                  h_t_large = newdata_data_h_t_large,
-                                                 sp_cor = object$CovarianceForms[["sp_cor"]],
+                                                 s_cor = object$CovarianceForms[["s_cor"]],
                                                  t_cor = object$CovarianceForms[["t_cor"]])
 
 
@@ -139,7 +139,7 @@ predict.stlmm_prediction <- function(object,
                                       logdet = FALSE,
                                       m_index = object$data_object$m_index,
                                       o_index = object$data_object$o_index,
-                                      sp_cor = object$CovarianceForms[["sp_cor"]],
+                                      s_cor = object$CovarianceForms[["s_cor"]],
                                       t_cor = object$CovarianceForms[["t_cor"]],
                                       xo = NULL,
                                       yo = NULL)
@@ -161,7 +161,7 @@ predict.stlmm_prediction <- function(object,
     newdata_stcovariance <- make_stcovariance(covparam_object = object$CovarianceParameters,
                                               h_s_large = newdata_h_s_large,
                                               h_t_large = newdata_h_t_large,
-                                              sp_cor = object$CovarianceForms[["sp_cor"]],
+                                              s_cor = object$CovarianceForms[["s_cor"]],
                                               t_cor = object$CovarianceForms[["t_cor"]])
     H <- newdata_xo - newdata_invxo
 

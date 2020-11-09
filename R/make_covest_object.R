@@ -1,4 +1,4 @@
-# make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, data_object,
+# make_covest_object <- function(initial = NULL, estmethod, stcov, s_cor, t_cor, data_object,
 #                                weights = NULL, chol = NULL, condition = NULL,
 #                                max_options = NULL, optim_options = NULL, stempsv_options = NULL){
 #
@@ -91,7 +91,7 @@
 #                                   initial = initial, initial_plo = initial_plo,
 #                                   logdet = logdet, max_options = max_options,
 #                                   optim_options = optim_options,
-#                                   sp_cor = sp_cor, stempsv = stempsv,
+#                                   s_cor = s_cor, stempsv = stempsv,
 #                                   stempsv_options = stempsv_options, t_cor = t_cor,
 #                                   weights = weights), class = class(initial))
 #   return(covest_object)
@@ -111,7 +111,7 @@
 
 
 
-make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, data_object,
+make_covest_object <- function(initial = NULL, estmethod, stcov, s_cor, t_cor, data_object,
                                 weights = NULL, chol = NULL, condition = NULL,
                                 max_options = NULL, optim_options = NULL, stempsv_options = NULL){
 
@@ -201,7 +201,7 @@ make_covest_object <- function(initial = NULL, estmethod, stcov, sp_cor, t_cor, 
                                    initial = initial, initial_plo = initial_plo,
                                    logdet = logdet, max_options = max_options,
                                    optim_options = optim_options,
-                                   sp_cor = sp_cor, stempsv = stempsv,
+                                   s_cor = s_cor, stempsv = stempsv,
                                    stempsv_options = stempsv_options, t_cor = t_cor,
                                    weights = weights), class = class(initial))
   return(covest_object)

@@ -11,7 +11,7 @@ invert.productsum <- function(invert_object) {
     # layout the arguments
     r_s_large <-  make_r(h = invert_object$h_s_large,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_large <- make_r(h = invert_object$h_t_large,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)
@@ -48,7 +48,7 @@ invert.productsum <- function(invert_object) {
     # r_t_small <- invert_object$r_t_small
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_small <- make_r(h = invert_object$h_t_small,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)
@@ -181,7 +181,7 @@ invert.sum_with_error <- function(invert_object) {
 
     r_s_large <-  make_r(h = invert_object$h_s_large,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_large <- make_r(h = invert_object$h_t_large,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)
@@ -216,7 +216,7 @@ invert.sum_with_error <- function(invert_object) {
     # r_t_small <- invert_object$r_t_small
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_small <- make_r(h = invert_object$h_t_small,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)
@@ -305,7 +305,7 @@ invert.product <- function(invert_object) {
 
     r_s_large <-  make_r(h = invert_object$h_s_large,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_large <- make_r(h = invert_object$h_t_large,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)
@@ -338,7 +338,7 @@ invert.product <- function(invert_object) {
     # r_t_small <- invert_object$r_t_small
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$sp_cor)
+                         structure = invert_object$s_cor)
     r_t_small <- make_r(h = invert_object$h_t_small,
                         range = invert_object$covparams[["t_range"]],
                         structure = invert_object$t_cor)

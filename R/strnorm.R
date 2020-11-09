@@ -11,7 +11,7 @@ strnorm.matrix <- function(object, mu, size, condition = 1e-4){
 
 
 strnorm.default <- function(object, mu, size, xcoord, ycoord = NULL, tcoord, data,
-                            sp_cor, t_cor, chol = FALSE, condition = 1e-4, h_options = NULL){
+                            s_cor, t_cor, chol = FALSE, condition = 1e-4, h_options = NULL){
   if (is.null(h_options)){
     h_options = list(h_large = TRUE, h_t_distmetric = "euclidean", h_s_distmetric = "euclidean")
   }
@@ -27,7 +27,7 @@ strnorm.default <- function(object, mu, size, xcoord, ycoord = NULL, tcoord, dat
       h_t_large <- make_h(coord1 = data[[tcoord]], distmetric = h_options$h_t_distmetric)
     }
     st_covariance <- make_stcovariance(covparam_object = object, h_s_large = h_s_large,
-                                                  h_t_large = h_t_large, sp_cor = sp_cor,
+                                                  h_t_large = h_t_large, s_cor = s_cor,
                                                   t_cor = t_cor)
     strnorm_sim <- strnorm.matrix(object = st_covariance, mu = mu, size = size, condition = condition)
   } else {
@@ -35,7 +35,7 @@ strnorm.default <- function(object, mu, size, xcoord, ycoord = NULL, tcoord, dat
     data$original_key <- seq.int(1, nrow(data))
     spint <- storder(data = data, xcoord = xcoord, ycoord = ycoord, tcoord = tcoord,
                      h_options = h_options)
-    r_s_small <- make_r(h = spint$h_s_small, range = covparam_object[["s_range"]], structure = sp_cor)
+    r_s_small <- make_r(h = spint$h_s_small, range = covparam_object[["s_range"]], structure = s_cor)
     diag(r_s_small) <- diag(r_s_small) + condition
 
 

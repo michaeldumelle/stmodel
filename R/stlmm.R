@@ -3,7 +3,7 @@ stlmm <- function(data, formula, ...){
 }
 
 stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov,
-                             estmethod = "reml", sp_cor = "exponential", t_cor = "exponential", chol = FALSE, condition = 1e-4,
+                             estmethod = "reml", s_cor = "exponential", t_cor = "exponential", chol = FALSE, condition = 1e-4,
                              logdet = FALSE, weights = "cressie", initial = NULL,
                              optim_options = NULL, h_options = NULL,
                              max_options = NULL, stempsv_options = NULL, ...){
@@ -15,7 +15,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
   # make the covest object
   covest_object <- make_covest_object(initial = initial, estmethod = estmethod,
                                         stcov = stcov, data_object = data_object, condition = condition, chol = chol,
-                                        sp_cor = sp_cor, t_cor = t_cor, weights = weights, max_options = max_options,
+                                        s_cor = s_cor, t_cor = t_cor, weights = weights, max_options = max_options,
                                         optim_options = optim_options, stempsv_options = stempsv_options)
 
 
@@ -34,7 +34,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
                                       logdet = logdet,
                                       m_index = data_object$m_index,
                                       o_index = data_object$o_index,
-                                      sp_cor = sp_cor,
+                                      s_cor = s_cor,
                                       t_cor = t_cor,
                                       xo = data_object$ordered_xo,
                                       yo = data_object$ordered_yo)
@@ -52,7 +52,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
   stlmm_object <- structure(list(CovarianceParameters = covest_output$par_r, Coefficients = betaest_output$betahat,
                                  NamesCoefficients = names(Coefficients), CovCoefficients = betaest_output$cov_betahat,
                                  ObjectiveFn = covest_output$value,
-                                 CovarianceForms = c(stcov = stcov, sp_cor = sp_cor, t_cor = t_cor),
+                                 CovarianceForms = c(stcov = stcov, s_cor = s_cor, t_cor = t_cor),
                                  formula = formula,
                                  model = list(FixedDesignMatrix = data_object$original_xo, Response = data_object$original_yo),
                                  data_object = data_object, invert_output = invert_output,
