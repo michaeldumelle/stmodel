@@ -2,50 +2,43 @@ invert <- function(invert_object) {
   UseMethod("invert", object = invert_object)
 }
 
+# invert a product sum covariance matrix
 invert.productsum <- function(invert_object) {
 
-
-
+  # invert using a the standard cholesky decomposition approach
   if (invert_object$chol) {
 
-    # layout the arguments
-    r_s_large <-  make_r(h = invert_object$h_s_large,
-                         range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$s_cor)
-    r_t_large <- make_r(h = invert_object$h_t_large,
-                        range = invert_object$covparams[["t_range"]],
-                        structure = invert_object$t_cor)
-    # r_s_large <- invert_object$r_s_large
-    # r_t_large <- invert_object$r_t_large
-    s_de <- invert_object$covparams[["s_de"]]
-    s_ie <- invert_object$covparams[["s_ie"]]
-    t_de <- invert_object$covparams[["t_de"]]
-    t_ie <- invert_object$covparams[["t_ie"]]
-    st_de <- invert_object$covparams[["st_de"]]
-    st_ie <- invert_object$covparams[["st_ie"]]
-    xyc_o <- invert_object$xyc_o
-    condition <- invert_object$condition
-    logdet <- invert_object$logdet
+    # make the covariance matrix
+    sigma <- make_stcovariance.productsum(
+      covparam_object = invert_object$covparams,
+      h_s_large = invert_object$h_s_large,
+      h_t_large = invert_object$h_t_large,
+      s_cor = invert_object$s_cor,
+      t_cor = invert_object$t_cor
+    )
 
-    cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
-    cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
-    cov_st <- st_de * r_t_large * r_s_large + st_ie * (r_s_large == 1) * (r_t_large == 1)
-    sigma <- cov_s + cov_t + cov_st
-    diag(sigma) <- diag(sigma) + condition
+    # adding condition number stability
+    diag(sigma) <- diag(sigma) + invert_object$condition
+
+    # finding the Cholesky decomposition
     chol_sigma <- chol(sigma)
+
+    # computing the inverse
     siginv <- chol2inv(chol_sigma)
-    siginv_o <- siginv %*% xyc_o
-    if (logdet){
+
+    # multiplying this inverse on the right
+    siginv_o <- siginv %*% invert_object$xyc_o
+
+    # computing the log determinant if requested
+    if (invert_object$logdet){
       logdet <- 2 * sum(log(diag(chol_sigma)))
     } else {
       logdet <- NULL
     }
   } else {
 
-
-    # layout the arguments
-    # r_s_small <- invert_object$r_s_small
-    # r_t_small <- invert_object$r_t_small
+    # saving the required objects to invert the matrix - this needs to be cleaned up
+    # at some point
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
                          structure = invert_object$s_cor)
@@ -179,41 +172,37 @@ invert.sum_with_error <- function(invert_object) {
 
   if (invert_object$chol) {
 
-    r_s_large <-  make_r(h = invert_object$h_s_large,
-                         range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$s_cor)
-    r_t_large <- make_r(h = invert_object$h_t_large,
-                        range = invert_object$covparams[["t_range"]],
-                        structure = invert_object$t_cor)
-    # r_s_large <- invert_object$r_s_large
-    # r_t_large <- invert_object$r_t_large
-    s_de <- invert_object$covparams[["s_de"]]
-    s_ie <- invert_object$covparams[["s_ie"]]
-    t_de <- invert_object$covparams[["t_de"]]
-    t_ie <- invert_object$covparams[["t_ie"]]
-    st_ie <- invert_object$covparams[["st_ie"]]
-    xyc_o <- invert_object$xyc_o
-    condition <- invert_object$condition
-    logdet <- invert_object$logdet
+    # make the covariance matrix
+    sigma <- make_stcovariance.sum_with_error(
+      covparam_object = invert_object$covparams,
+      h_s_large = invert_object$h_s_large,
+      h_t_large = invert_object$h_t_large,
+      s_cor = invert_object$s_cor,
+      t_cor = invert_object$t_cor
+    )
 
-    cov_s <- s_de * r_s_large + s_ie * (r_s_large == 1)
-    cov_t <- t_de * r_t_large + t_ie * (r_t_large == 1)
-    cov_st <- st_ie * (r_s_large == 1) * (r_t_large == 1)
-    sigma <- cov_s + cov_t + cov_st
-    diag(sigma) <- diag(sigma) + condition
+    # adding condition number stability
+    diag(sigma) <- diag(sigma) + invert_object$condition
+
+    # finding the Cholesky decomposition
     chol_sigma <- chol(sigma)
+
+    # computing the inverse
     siginv <- chol2inv(chol_sigma)
-    siginv_o <- siginv %*% xyc_o
-    if (logdet){
+
+    # multiplying this inverse on the right
+    siginv_o <- siginv %*% invert_object$xyc_o
+
+    # computing the log determinant if requested
+    if (invert_object$logdet){
       logdet <- 2 * sum(log(diag(chol_sigma)))
     } else {
       logdet <- NULL
     }
   } else {
 
-    # layout the arguments
-    # r_s_small <- invert_object$r_s_small
-    # r_t_small <- invert_object$r_t_small
+    # saving the required objects to invert the matrix - this needs to be cleaned up
+    # at some point
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
                          structure = invert_object$s_cor)
@@ -303,39 +292,37 @@ invert.product <- function(invert_object) {
 
   if (invert_object$chol) {
 
-    r_s_large <-  make_r(h = invert_object$h_s_large,
-                         range = invert_object$covparams[["s_range"]],
-                         structure = invert_object$s_cor)
-    r_t_large <- make_r(h = invert_object$h_t_large,
-                        range = invert_object$covparams[["t_range"]],
-                        structure = invert_object$t_cor)
-    # r_s_large <- invert_object$r_s_large
-    # r_t_large <- invert_object$r_t_large
-    st_de <- invert_object$covparams[["st_de"]]
-    v_s <- invert_object$covparams[["v_s"]]
-    v_t <- invert_object$covparams[["v_t"]]
-    xyc_o <- invert_object$xyc_o
-    condition <- invert_object$condition
-    logdet <- invert_object$logdet
+    # make the covariance matrix
+    sigma <- make_stcovariance.product(
+      covparam_object = invert_object$covparams,
+      h_s_large = invert_object$h_s_large,
+      h_t_large = invert_object$h_t_large,
+      s_cor = invert_object$s_cor,
+      t_cor = invert_object$t_cor
+    )
 
-    scale_r_s_large <- make_sigma(r_mx = r_s_large, v_ie = v_s, e = 1, scale = TRUE)
-    scale_r_t_large <- make_sigma(r_mx = r_t_large, v_ie = v_s, e = 1, scale = TRUE)
+    # adding condition number stability
+    diag(sigma) <- diag(sigma) + invert_object$condition
 
-    cov_st <- st_de * scale_r_s_large * scale_r_t_large
-    sigma <- cov_st
-    diag(sigma) <- diag(sigma) + condition
+    # finding the Cholesky decomposition
     chol_sigma <- chol(sigma)
+
+    # computing the inverse
     siginv <- chol2inv(chol_sigma)
-    siginv_o <- siginv %*% xyc_o
-    if (logdet){
+
+    # multiplying this inverse on the right
+    siginv_o <- siginv %*% invert_object$xyc_o
+
+    # computing the log determinant if requested
+    if (invert_object$logdet){
       logdet <- 2 * sum(log(diag(chol_sigma)))
     } else {
       logdet <- NULL
     }
   } else {
-    # layout the arguments
-    # r_s_small <- invert_object$r_s_small
-    # r_t_small <- invert_object$r_t_small
+
+    # saving the required objects to invert the matrix - this needs to be cleaned up
+    # at some point
     r_s_small <-  make_r(h = invert_object$h_s_small,
                          range = invert_object$covparams[["s_range"]],
                          structure = invert_object$s_cor)
