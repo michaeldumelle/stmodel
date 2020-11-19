@@ -13,6 +13,10 @@ plo2r.svwls <- function(par, covest_object){
 # the svwls productsum plo2r
 plo2r.svwls.productsum <- function(par, covest_object){
 
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
+
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
 
@@ -55,6 +59,10 @@ plo2r.svwls.productsum <- function(par, covest_object){
 
 plo2r.svwls.sum_with_error <- function(par, covest_object){
 
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
+
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
 
@@ -94,6 +102,10 @@ plo2r.svwls.sum_with_error <- function(par, covest_object){
 
 plo2r.svwls.product <- function(par, covest_object){
 
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
+
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
 
@@ -126,6 +138,10 @@ plo2r.reml <- function(par, covest_object, ...){
 }
 
 plo2r.reml.productsum <- function(par, covest_object, ov_var){
+
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
 
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
@@ -167,6 +183,10 @@ plo2r.reml.productsum <- function(par, covest_object, ov_var){
 
 plo2r.reml.sum_with_error <- function(par, covest_object, ov_var){
 
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
+
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
 
@@ -202,6 +222,10 @@ plo2r.reml.sum_with_error <- function(par, covest_object, ov_var){
 }
 
 plo2r.reml.product <- function(par, covest_object, ov_var){
+
+  # set reasonable bounds on what the exponentiated plo parameters can be - this was a frustrating bug to find
+  par[par > 7] = 7
+  par[par < -7] = -7
 
   # inverse logit the parameter vector
   invlogit <- exp(par) / (1 + exp(par))
