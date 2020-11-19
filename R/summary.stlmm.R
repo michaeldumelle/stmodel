@@ -47,7 +47,7 @@ summary.stlmm <- function(object) {
   resid_vec <- object$Residuals
 
   # save the objective functions
-  objective <- object$ObjectiveFn
+  objective <- object$Objective
 
   # store the final summary output
   output <- structure(

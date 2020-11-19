@@ -80,7 +80,11 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
       Coefficients = betaest_output$betahat,
       NamesCoefficients = colnames(data_object$original_xo),
       CovCoefficients = betaest_output$cov_betahat,
-      ObjectiveFn = covest_output$value,
+      Objective = c(
+        value = covest_output$value,
+        counts = covest_output$count,
+        convergence = covest_output$convergence
+      ),
       CovarianceForms = c(
         stcov = stcov,
         s_cor = s_cor,
@@ -105,6 +109,7 @@ stlmm.data.frame <- function(data, formula, xcoord, ycoord = NULL, tcoord, stcov
       ),
       h_options = data_object$h_options,
       stempsv_options = covest_object$stempsv_options,
+      stempsv = covest_object$stempsv,
       optim_options = covest_object$optim_options,
       max_options = covest_object$max_options,
       chol = chol,

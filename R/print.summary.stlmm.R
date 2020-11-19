@@ -9,7 +9,7 @@ print.summary.stlmm <- function(x,
 
   # pasting the objective function
   cat("\nObjective Function:\n")
-  print(x$ObjectiveFn)
+  print(x$Objective)
 
   # pasting the residual summary
   cat("\nResiduals:\n")
