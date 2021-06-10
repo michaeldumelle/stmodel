@@ -15,10 +15,10 @@ make_covest_object <- function(initial = NULL,
   if (is.null(optim_options)) {
     if (estmethod == "reml") {
       # lower tolerance for REML
-      control = list(reltol = 1e-4, maxit = 2000)
+      control <- list(reltol = 1e-4, maxit = 2000)
     } else {
       # higher tolerance for CWLS
-      control = list(reltol = 1e-8, maxit = 10000)
+      control <- list(reltol = 1e-8, maxit = 10000)
     }
     # Nelder-Mead as a default
     optim_options <- list(method = "Nelder-Mead", control = control)
@@ -30,7 +30,7 @@ make_covest_object <- function(initial = NULL,
   }
 
   if (is.null(stempsv_options)) {
-    if (estmethod == "svwls"){
+    if (estmethod == "svwls") {
       # defaults for the semivariogram options - the NULLS are given to
       # appropriate defaults later
       stempsv_options <- list(n_s_lag = 16, n_t_lag = 16, h_s_max = NULL, h_t_max = NULL)
@@ -112,18 +112,30 @@ make_covest_object <- function(initial = NULL,
   initial_plo <- r2plo(covparam_object = initial, max_options = max_options)
 
   # making the semivariogram if required
-  if (estmethod == "svwls"){
+  if (estmethod == "svwls") {
 
     # storing the squared difference of residuals
+    # timing
+    hresp_start <- Sys.time()
     h_response <- make_h(coord1 = lmod_r, distmetric = "euclidean")^2
+    hresp_end <- Sys.time()
+    hresp_seconds <- as.numeric(hresp_end - hresp_start, units = "secs")
 
     # making the empirical semivariogram using the distance matrices
+
+    # timing
+    stempsv_short_start <- Sys.time()
     stempsv <- stempsv(
       h_response = h_response,
       h_s_large = data_object$h_s_large,
       h_t_large = data_object$h_t_large,
       stempsv_options = stempsv_options
     )
+    stempsv_short_end <- Sys.time()
+    stempsv_short_seconds <- as.numeric(stempsv_short_end - stempsv_short_start, units = "secs")
+
+    # computing the final seconds
+    stempsv_seconds <- data_object$hdist_seconds + hresp_seconds + stempsv_short_seconds
 
     # passing through the weights
     weights <- weights
@@ -143,22 +155,26 @@ make_covest_object <- function(initial = NULL,
     chol <- chol
     logdet <- TRUE
     condition <- condition
+    stempsv_seconds <- 0
   }
 
   # making the covest_object and giving it the appropriate class
   covest_object <- structure(
-    list(chol = chol,
-         condition = condition,
-         initial = initial,
-         initial_plo = initial_plo,
-         logdet = logdet,
-         max_options = max_options,
-         optim_options = optim_options,
-         s_cor = s_cor,
-         stempsv = stempsv,
-         stempsv_options = stempsv_options,
-         t_cor = t_cor,
-         weights = weights),
+    list(
+      chol = chol,
+      condition = condition,
+      initial = initial,
+      initial_plo = initial_plo,
+      logdet = logdet,
+      max_options = max_options,
+      optim_options = optim_options,
+      s_cor = s_cor,
+      stempsv = stempsv,
+      stempsv_options = stempsv_options,
+      stempsv_seconds = stempsv_seconds,
+      t_cor = t_cor,
+      weights = weights
+    ),
     class = class(initial)
   )
 

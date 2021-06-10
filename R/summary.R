@@ -1,4 +1,24 @@
-summary.stlmm <- function(object) {
+#' Summarize a Spatio-Temporal Linear Mixed Model
+#'
+#' @param object A \code{stlmm} object.
+#' @param ... Additional arguments.
+#'
+#' @name summary
+#'
+#' @method summary stlmm
+#'
+#' @return A list containing several objects
+#'   \describe{
+#'     \item{\code{Call}}{The original function call.}
+#'     \item{\code{FixedEffects}}{Fixed effects estimates and standard errors.}
+#'     \item{\code{CovarianceParameters}}{Covariance parameter estimates.}
+#'     \item{\code{CovarianceForms}}{The spatial, temopral, and spatio-temporal correlation forms.}
+#'     \item{\code{Residuals}}{Raw residuals.}
+#'     \item{\code{ObjectiveFn}}{Objective function value.}
+#'   }
+#'
+#' @export
+summary.stlmm <- function(object, ...) {
 
   # store the formula
   call <- object$formula

@@ -1,3 +1,59 @@
+#' Compute the Empirical Spatio-Temporal Semivariogram
+#'
+#' @param response A vector of response variables (not required if
+#'   \code{h_response} is provided).
+#'
+#' @param xcoord A vector of x-coordinates (not required if
+#'   \code{h_s_large} is provided).
+#'
+#' @param ycoord A vector of y-coordinates (not required if
+#'   \code{h_s_large} is provided).
+#'
+#' @param tcoord A vector of t-coordinates (not required if
+#'   \code{h_t_large} is provided).
+#'
+#' @param h_options A list containing options to compute distances if
+#'   \code{response}, \code{xcoord}, \code{ycoord}, and \code{tcoord} are
+#'   provided. Named arguments are
+#'   \describe{
+#'     \item{\code{h_t_distmetric}}{The temporal distance matrix (defaults to
+#'     \code{"euclidean"}).}.
+#'     \item{\code{h_s_distmetric}}{The spatial distance matrix (defaults to
+#'     \code{"euclidean"}).}
+#'  }
+#'
+#' @param h_response A distance matrix of paired differences of the response
+#'   variable.
+#'
+#' @param h_s_large A distance matrix of paired differences of the spatial
+#'   locations.
+#'
+#' @param h_t_large A distance matrix of paired differences of the temporal
+#'   locations.
+#'
+#' @param stempsv_options A list containing additional options. Named arguments
+#'   are
+#'   \describe{
+#'     \item{\code{n_s_lag}}{The number of spatial distance classes (defaults to 16).}
+#'     \item{\code{n_t_lag}}{The number of temporal distance classes (defaults to 16).}
+#'     \item{\code{h_s_max}}{The maximum spatial distance. Deafaults to half the
+#'       maximum distance in the spatial domain.}
+#'     \item{\code{h_t_max}}{The maximum temporal distance. Deafaults to half the
+#'       maximum distance in the temporal domain.}
+#'   }
+#'
+#' @return A data frame whose columns are
+#'   \describe{
+#'     \item{\code{gammahat}}{The estimated empirical semivariogram value for
+#'       for the spatio-temporal distance class.}
+#'     \item{\code{n}}{The number of pairs for the spatio-temporal distance class}
+#'     \item{\code{h_s_avg}}{The average spatial distance in the spatio-temporal
+#'       distance class.}
+#'     \item{\code{h_t_avg}}{The average temporal distance in the spatio-temporal
+#'       distance class.}
+#'   }
+#'
+#' @export
 stempsv <- function(response,
                     xcoord,
                     ycoord = NULL,
@@ -6,8 +62,7 @@ stempsv <- function(response,
                     h_response = NULL,
                     h_s_large = NULL,
                     h_t_large = NULL,
-                    stempsv_options = NULL
-                    ) {
+                    stempsv_options = NULL) {
 
   # setting default options if none are given
   if (is.null(stempsv_options)) {
@@ -16,7 +71,7 @@ stempsv <- function(response,
 
   # setting default h options if none are given
   if (is.null(h_options)) {
-    h_options = list(h_t_distmetric = "euclidean", h_s_distmetric = "euclidean")
+    h_options <- list(h_t_distmetric = "euclidean", h_s_distmetric = "euclidean")
   }
 
   # creating a large spatial distance matrix if not provided
@@ -25,7 +80,7 @@ stempsv <- function(response,
   }
 
   # creating a large temporal distance matrix if not provided
-  if (is.null(h_t_large)){
+  if (is.null(h_t_large)) {
     h_t_large <- make_h(coord1 = tcoord, distmetric = h_options$h_t_distmetric)
   }
 
@@ -52,99 +107,25 @@ stempsv <- function(response,
     stempsv_options$h_t_max <- max(h_t_large) / 2
   }
 
-  # creating the base upper limits of a vector of spatial lags
-  s_lags_upper <- seq(0, stempsv_options$h_s_max, length.out = stempsv_options$n_s_lag)
+  hmax_index <- (h_s_large <= stempsv_options$h_s_max) & (h_t_large <= stempsv_options$h_t_max)
+  h_s_large <- h_s_large[hmax_index]
+  h_t_large <- h_t_large[hmax_index]
+  h_response <- h_response[hmax_index]
 
-  # creating the base lower limits of a vector of spatial lags
-  # the -0.1 is provided so that the (0, 0] endpoint becomes
-  # [0, 0] because the code will be lower < distance <= upper
-  s_lags_lower <- c(-0.1, s_lags_upper[-stempsv_options$n_s_lag])
+  s_lags <- c(-0.1, seq(0, stempsv_options$h_s_max, length.out = stempsv_options$n_s_lag))
+  h_s_index <- cut(h_s_large, s_lags, include.lowest = T)
+  t_lags <- c(-0.1, seq(0, stempsv_options$h_t_max, length.out = stempsv_options$n_t_lag))
+  h_t_index <- cut(h_t_large, t_lags, include.lowest = T)
+  st_index <- interaction(h_s_index, h_t_index)
 
-  # repeating these lags to for each time lag
-  s_lags_upper <- rep(s_lags_upper, times = stempsv_options$n_t_lag)
-  s_lags_lower <- rep(s_lags_lower, times = stempsv_options$n_t_lag)
 
-  # finding the mid point of each lag set
-  h_s_mid <- pmax(0, rowMeans(cbind(s_lags_lower, s_lags_upper)))
+  h_s_avg <- tapply(h_s_large, st_index, mean)
+  h_t_avg <- tapply(h_t_large, st_index, mean)
+  gammahat <- tapply(h_response, st_index, FUN = function(x) mean(x) / 2)
+  n <- tapply(h_response, st_index, length)
 
-  # creating the base upper limits of a vector of temporal lags
-  t_lags_upper <- rep(seq(0, stempsv_options$h_t_max, length.out = stempsv_options$n_t_lag))
-
-  # creating the base lower limits of a vector of temporal lags
-  # the -0.1 is provided so that the (0, 0] endpoint becomes
-  # [0, 0] because the code will be lower < distance <= upper
-  t_lags_lower <- rep(c(-0.1, t_lags_upper[-stempsv_options$n_t_lag]))
-
-  # repeating these lags to for each spatial lag
-  t_lags_upper <- rep(t_lags_upper, each = stempsv_options$n_s_lag)
-  t_lags_lower <- rep(t_lags_lower, each = stempsv_options$n_s_lag)
-
-  # finding the mid point of each lag set
-  h_t_mid <- pmax(0, rowMeans(cbind(t_lags_lower, t_lags_upper)))
-
-  # computing the semivariogram
-  output <- pmap_dfr(
-    list(
-    s_lag_lower = s_lags_lower,
-    s_lag_upper = s_lags_upper,
-    t_lag_lower = t_lags_lower,
-    t_lag_upper = t_lags_upper,
-    h_s_mid = h_s_mid, h_t_mid = h_t_mid
-    ),
-    .f = compute_stempsv, h_s_large, h_t_large, h_response
-  )
-
-  # only returning the lag sets having at least one observation
-  return_output <- output[output[["n"]] > 0, , drop = FALSE]
-
-  # semivariogram returned if there is at least one lag set having an observation
-  if (nrow(return_output) > 0) {
-    return(return_output)
-  } else { # an error if there are no distance classes provided having observations
-    stop("No semivariogram bins meet distance requirements: Choose larger values for h_s_max and h_t_max")
-  }
-}
-
-compute_stempsv <- function(s_lag_lower,
-                            s_lag_upper,
-                            t_lag_lower,
-                            t_lag_upper,
-                            h_s_mid,
-                            h_t_mid,
-                            h_s_large,
-                            h_t_large, h_response
-                            ) {
-
-  # subsetting by the spatial distance in the appropriate lag set
-  h_s <- (h_s_large > s_lag_lower) & (h_s_large <= s_lag_upper)
-
-  # taking the average of the spatial distances in the lag set
-  h_s_avg <- mean(h_s_large[h_s])
-
-  # subsetting by the temporal distance in the appropriate lag set
-  h_t <- (h_t_large > t_lag_lower) & (h_t_large <= t_lag_upper)
-
-  # taking the average of the temporal distances in the lag set
-  h_t_avg <- mean(h_t_large[h_t])
-
-  # taking the appropriate squared differences in the response
-  sqrdifs <- h_response[h_s & h_t]
-
-  # number of unique pairs of squared differences (could have double this
-  # and it would no affect optimization)
-  n_gammahat <- length(sqrdifs)
-
-  # computing the semivariance
-  gammahat <- mean(sqrdifs)/2
-
-  # returning a data frame with relevant information
-  return(data.frame(
-    n = n_gammahat,
-    gammahat = gammahat,
-    h_s_mid = h_s_mid,
-    h_s_avg = h_s_avg,
-    h_t_mid = h_t_mid,
-    h_t_avg = h_t_avg
-    )
-  )
+  return_output <- na.omit(data.frame(gammahat, n, h_s_avg, h_t_avg))
+  attr(return_output, "na.action") <- NULL
+  row.names(return_output) <- NULL
+  return(return_output)
 }

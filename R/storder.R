@@ -1,4 +1,4 @@
-storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
+storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options) {
 
   # find unique temporal coordinates
   key_t <- unique(data[, tcoord, drop = FALSE])
@@ -30,10 +30,9 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
     # compute the ordered small spatial distance matrix
     h_s_small <- make_h(
       coord1 = key_s[[xcoord]],
-      dismetric = h_options$h_s_distmetric
+      distmetric = h_options$h_s_distmetric
     )
-
-  } else {   # compute the small distance matrix in 1d
+  } else { # compute the small distance matrix in 1d
 
     # order the unique spatial coodrinates
     key_s <- key_s[order(key_s[[ycoord]], key_s[[xcoord]]), , drop = FALSE]
@@ -86,6 +85,8 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
     # compute the large distance matrices in 1d
     if (is.null(ycoord)) {
 
+      # save the times
+      hdist_start <- Sys.time()
       # compute the large spatial distance matrix
       h_s_large <- make_h(
         coord1 = ordered_data_o[[xcoord]],
@@ -97,10 +98,13 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
         coord1 = ordered_data_o[[tcoord]],
         distmetric = h_options$h_t_distmetric
       )
-
+      hdist_end <- Sys.time()
+      hdist_seconds <- as.numeric(hdist_end - hdist_start, units = "secs")
     } else { # compute the large distance matrices in 2d
 
       # compute the large spatial distance matrix
+      # save the times
+      hdist_start <- Sys.time()
       h_s_large <- make_h(
         coord1 = ordered_data_o[[xcoord]],
         coord2 = ordered_data_o[[ycoord]],
@@ -112,14 +116,15 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
         coord1 = ordered_data_o[[tcoord]],
         distmetric = h_options$h_t_distmetric
       )
-
+      hdist_end <- Sys.time()
+      hdist_seconds <- as.numeric(hdist_end - hdist_start, units = "secs")
     }
   } else { # set the large distance matrices equal to NULL if not requested
     h_s_large <- NULL
     h_t_large <- NULL
   }
 
-  #return the relevant output
+  # return the relevant output
   return(list(
     ordered_data_dense = data,
     ordered_data_o = ordered_data_o,
@@ -129,9 +134,10 @@ storder <- function(data, xcoord, ycoord = NULL, tcoord, h_options){
     n_t = n_t,
     o_index = o_index,
     m_index = m_index,
+    hdist_seconds = hdist_seconds,
     h_s_large = h_s_large,
     h_t_large = h_t_large,
     key_s = key_s,
-    key_t = key_t)
-  )
+    key_t = key_t
+  ))
 }

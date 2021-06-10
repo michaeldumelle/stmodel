@@ -1,19 +1,27 @@
 Package: stmodel
-Title: What the Package Does (One Line, Title Case)
+Title: Fit Spatio-Temporal Linear Mixed Models
 Version: 0.0.0.9000
 Authors@R: 
-    person(given = "First",
-           family = "Last",
-           role = c("aut", "cre"),
-           email = "first.last@example.com",
-           comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
-License: `use_mit_license()`, `use_gpl3_license()` or friends to
-    pick a license
+    c(person(
+      given = "Michael",
+      family = "Dumelle",
+      role = c("aut", "cre"),
+      email = "Dumelle.Michael@epa.gov",
+      comment = c(ORCID = "0000-0002-3393-5529")
+    ),
+    person(
+      given = "Matt",
+      family = "Higham",
+      role = c("aut"),
+      email = "mhigham@stlawu.edu"
+    ))
+Description: This package is for fitting spatio-temporal models.
+License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.1.0
+RoxygenNote: 7.1.1
 Imports: 
-    stats,
-    purrr
+    stats
+Depends: 
+    R (>= 2.10)

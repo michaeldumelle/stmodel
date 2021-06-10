@@ -1,20 +1,50 @@
+#' Make a covariance matrix
+#'
+#' @param covparam_object A covparam object
+#'
+#' @param h_s_large A spatial distance matrix of all spatio-temporal observations (if specified)
+#'
+#' @param h_t_large A temporal distance matrix of all spatio-temopral observations (if specified)
+#'
+#' @param s_cor The spatial correlation
+#'   \describe{
+#'     \item{\code{exponential}}{The exponential correlation (the default).}
+#'     \item{\code{spherical}}{The spherical correlation.}
+#'     \item{\code{gaussian}}{The Gaussian correlation.}
+#'   }
+#'
+#' @param t_cor The temporal correlation
+#'   \describe{
+#'     \item{\code{exponential}}{The exponential correlation (the default).}
+#'     \item{\code{spherical}}{The spherical correlation.}
+#'     \item{\code{gaussian}}{The Gaussian correlation.}
+#'     \item{\code{tent}}{The tent (linear with sill) correlation.}
+#'   }
+#'
+#' @return A covariance matrix.
+#'
+#' @export
 make_stcovariance <- function(covparam_object,
                               h_s_large,
                               h_t_large,
                               s_cor,
-                              t_cor
-                              ) {
+                              t_cor) {
 
   # call the appropriate generic
   UseMethod("make_stcovariance", object = covparam_object)
 }
 
+#' @name make_stcovariance
+#'
+#' @method make_stcovariance productsum
+#'
+#' @export make_stcovariance.productsum
+#' @export
 make_stcovariance.productsum <- function(covparam_object,
                                          h_s_large,
                                          h_t_large,
                                          s_cor,
-                                         t_cor
-                                         ) {
+                                         t_cor) {
   # creating the spatial correlation matrix
   r_s_large <- make_r(
     h = h_s_large,
@@ -60,12 +90,17 @@ make_stcovariance.productsum <- function(covparam_object,
   return(sigma)
 }
 
+#' @name make_stcovariance
+#'
+#' @method make_stcovariance sum_with_error
+#'
+#' @export make_stcovariance.sum_with_error
+#' @export
 make_stcovariance.sum_with_error <- function(covparam_object,
                                              h_s_large,
                                              h_t_large,
                                              s_cor,
-                                             t_cor
-                                             ) {
+                                             t_cor) {
   # creating the spatial correlation matrix
   r_s_large <- make_r(
     h = h_s_large,
@@ -112,7 +147,12 @@ make_stcovariance.sum_with_error <- function(covparam_object,
 }
 
 
-
+#' @name make_stcovariance
+#'
+#' @method make_stcovariance product
+#'
+#' @export make_stcovariance.product
+#' @export
 make_stcovariance.product <- function(covparam_object,
                                       h_s_large,
                                       h_t_large,
